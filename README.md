@@ -1,4 +1,3 @@
 # dota-highlights
-`cd src`
-`celery -A async_parser worker -l INFO`
-`python run_async_parser.py`
+`bash scripts/run_worker.sh`
+`bash scripts/run_server.sh`

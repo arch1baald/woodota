@@ -8,8 +8,7 @@ from datetime import datetime
 
 from loguru import logger
 
-
-REPLAY_DIR = os.path.join('..', 'replays')
+from settings import REPLAY_DIR
 
 
 def download(url):
@@ -41,7 +40,7 @@ def download_parse_save(url):
     return jsonlines_path
 
 
-def main():
+def run_sync_parser():
     urls = []
     urls_path = os.path.join(REPLAY_DIR, 'urls.txt')
     with open(urls_path, 'r') as fin:
@@ -59,4 +58,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run_sync_parser()

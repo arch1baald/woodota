@@ -7,9 +7,7 @@ from celery import chain
 from loguru import logger
 
 from .celery import app
-
-
-REPLAY_DIR = os.path.join('..', 'replays')
+from settings import REPLAY_DIR
 
 
 def download(url):
