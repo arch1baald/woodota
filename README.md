@@ -1,5 +1,5 @@
 # dota-highlights
-Extracts highlights from professional Dota 2 matches.
+Extract highlights from professional Dota 2 matches.
 
 ## Setup
 Create a virtual environment<br>
