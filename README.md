@@ -8,7 +8,7 @@ python3 -m virtualenv env
 source env/bin/activate
 ```
 
-Load dependencies<br>
+Install dependencies<br>
 ```
 pip install -r requirements.txt
 ```
@@ -27,6 +27,8 @@ Run Flask API<br>
 ```
 sh scripts/run_server.sh
 ```
+
+TODO: Create docker-compose
 
 ## Retrieve URLs
 Retrieve replay URLs by Tournament ID (Could be found at the end of Dotabuff [links](https://www.dotabuff.com/esports/leagues/13256-the-international-2021)). The result will be saved to `replays/urls.txt`<br>
