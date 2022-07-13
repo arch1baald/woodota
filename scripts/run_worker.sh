@@ -1,1 +1,0 @@
-PYTHONPATH=src celery -A async_parser worker -l INFO

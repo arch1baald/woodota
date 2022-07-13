@@ -1,10 +1,8 @@
 import os
 import time
 import requests
-import json
 import subprocess
 from bz2 import decompress
-from datetime import datetime
 
 from loguru import logger
 

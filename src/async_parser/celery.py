@@ -7,8 +7,8 @@ app = Celery(
     'async_parser',
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=['async_parser.async_parser'],
-    accept=['json', 'pickle']
+    include=['async_parser.tasks'],
+    accept=['json']
 )
 
 
