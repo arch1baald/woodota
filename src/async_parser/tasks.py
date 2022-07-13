@@ -11,8 +11,8 @@ from settings import REPLAY_DIR
 
 
 def download(url):
-    r = requests.get(url)
     logger.info(f'Downloading: {url}...')
+    r = requests.get(url)
     r.raise_for_status()
     compressed_dem = r.content
     logger.info(f'Decompressing: {url}...')
@@ -26,21 +26,35 @@ def download_save(url):
     match_salt = right.replace('dem.bz2', '')
     file_name = match_salt.split('_')[0]
     file_name += '.dem'
-    
-    dem = download(url)
     path = os.path.join(REPLAY_DIR, file_name)
+    
+    if os.path.exists(path):
+        logger.info(f'Dem file already exists: {path}...')
+        return path
+
+    dem = download(url)
     with open(path, 'wb') as fout:
         fout.write(dem)
     logger.info(f'Saved to {path}...')
     return path
 
 
+class ClarityParserException(Exception):
+    pass
+
+
 @app.task()
 def parse(dem_path, remove_dem=False):
     jsonlines_path = dem_path.replace('.dem', '.jsonlines')
+
     logger.info(f'Parsing {jsonlines_path}...')
     cmd = f'curl localhost:5600 --data-binary "@{dem_path}" > {jsonlines_path}'
     subprocess.run(cmd, shell=True)
+
+    if os.path.getsize(jsonlines_path) == 0:
+        os.remove(jsonlines_path)
+        raise ClarityParserException(
+            f'Result file is empty: {jsonlines_path}...\nDid you forget to run odota/parser?')
     
     if os.path.exists(dem_path) and remove_dem:
         logger.info(f'Removing temporary file {dem_path}...')

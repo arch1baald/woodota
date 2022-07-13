@@ -1,11 +1,11 @@
 import os
 from os.path import join
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from loguru import logger
 
 
 env_file_exists = load_dotenv()
-logger.info(f'.env file exists: {env_file_exists}')
+logger.info(f'.env file exists: {True if find_dotenv() else False}')
 
 
 ROOT_DIR = join(os.path.dirname(os.path.abspath(__file__)), '..')
