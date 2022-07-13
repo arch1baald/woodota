@@ -2,7 +2,7 @@
 Extracts highlights from professional Dota 2 matches.
 
 Create a virtual environment<br>
-`python3 -m virtualenv env`<br>
+```python3 -m virtualenv env```<br>
 `source env/bin/activate`
 
 Load dependencies<br>
