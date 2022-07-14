@@ -1,6 +1,11 @@
 # dota-highlights
 Extract highlights from professional Dota 2 matches.
 
+### TODO
+- Build and run with docker-compose
+- Add linter
+- Add typing
+
 ## Setup
 Create a virtual environment<br>
 ```
@@ -13,7 +18,7 @@ Install dependencies<br>
 pip install -r requirements.txt
 ```
 
-Run Clarity Parser Server<br>
+Build and Run Clarity Parser Server<br>
 ```
 sh scripts/run_clarity.sh
 ```
@@ -27,8 +32,6 @@ Run Flask API<br>
 ```
 sh scripts/run_server.sh
 ```
-
-TODO: Create docker-compose
 
 ## Retrieve URLs
 Retrieve replay URLs by Tournament ID (Could be found at the end of Dotabuff [links](https://www.dotabuff.com/esports/leagues/13256-the-international-2021)). The result will be saved to `replays/urls.txt`<br>
