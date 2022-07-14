@@ -7,29 +7,31 @@ Extract highlights from professional Dota 2 matches.
 - Add typing
 
 ## Setup
-Create a virtual environment<br>
+### Create a virtual environment
 ```
 python3 -m virtualenv env
 source env/bin/activate
 ```
 
-Install dependencies<br>
+### Install dependencies<br
 ```
 pip install -r requirements.txt
 ```
 
-Build and Run Clarity Parser Server<br>
+### Build and Run Clarity Parser Server
 ```
 sh scripts/run_clarity.sh
 ```
 
-Run Redis and Celery Workers<br>
+### Run Redis and Celery Workers
 ```
 sh scripts/run_workers.sh
 ```
 
-Run Flask API<br>
+### Run Flask API
+Open a new terminal window<br>
 ```
+source env/bin/activate
 sh scripts/run_server.sh
 ```
 
