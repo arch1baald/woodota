@@ -13,7 +13,7 @@ python3 -m virtualenv env
 source env/bin/activate
 ```
 
-### Install dependencies<br
+### Install dependencies
 ```
 pip install -r requirements.txt
 ```
