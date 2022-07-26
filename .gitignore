@@ -133,3 +133,6 @@ clarity/
 parser/*
 replays/*
 !replays/urls.txt
+.DS_Store
+youtube/videos/*
+youtube/frames/*
