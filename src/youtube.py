@@ -133,7 +133,6 @@ def process_frames(video_id, force=False):
 def main(keep_video=True, keep_frames=True, force_process=True):
     urls = [
         'https://youtu.be/ukbICbM4RR0',
-        # 'https://youtu.be/wUPhtY4sNP0',
     ]
 
     for url in urls:
