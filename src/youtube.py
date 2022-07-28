@@ -13,9 +13,6 @@ from settings import VIDEO_DIR, FRAMES_DIR, TIMESTAMPS_DIR
 from utils import DisableLogger
 
 
-ALREADY_PARSED = 634
-
-
 def youtube_download(url):
     options = dict(
         format='mp4',
@@ -30,24 +27,30 @@ def youtube_download(url):
     video_path = VIDEO_DIR / video_file
     if video_path.exists():
         logger.info(f'Video already exists: {video_path}')
-        return video_id, ALREADY_PARSED
+        return video_id
 
     logger.info(f'Downloading: {url}')
-    with yt_dlp.YoutubeDL(options) as ydl:   
-        error_code = ydl.download(url)
+    with yt_dlp.YoutubeDL(options) as ydl:
+        ydl.download(url)
 
     with open(video_info_path, 'w') as fout:
         json.dump(info, fout, indent=4)
-    return video_id, error_code
+    return video_id
 
 
-def sample_frames(video_path):
-    logger.info(f'Sampling Frames from: {video_path}')
-    output_path = FRAMES_DIR / video_path.stem
+def sample_frames(video_id):
+    video_path = VIDEO_DIR / f'{video_id}.mp4'
+    output_prefix = FRAMES_DIR / video_id
+    for file in os.listdir(FRAMES_DIR):
+        if file.startswith(video_id):
+            logger.info(f'Frames already exists: {video_id}')
+            return
+
+    logger.info(f'Sampling Frames from: {video_id}')
     cmd = f'''ffmpeg \
         -i {str(video_path)} \
         -r 1/1 \
-        {str(output_path)}__$filename%03d.bmp
+        {str(output_prefix)}__$filename%03d.bmp
     '''
     subprocess.run(cmd, shell=True)
 
@@ -130,27 +133,28 @@ def process_frames(video_id, force=False):
             break
 
 
-def main(keep_video=True, keep_frames=True, force_process=True):
+def main(keep_video=True, keep_frames=True, force_process=False):
     urls = [
+        'https://youtu.be/sNj5QAzujAM',
         'https://youtu.be/ukbICbM4RR0',
     ]
 
     for url in urls:
-        video_id, error_code = youtube_download(url)
+        video_id = youtube_download(url)
         video_path = VIDEO_DIR / f'{video_id}.mp4'
         video_info_path = VIDEO_DIR / f'{video_id}.json'
-        if not error_code:
-            sample_frames(video_path)
-        else:
-            logger.info(f'Frames already sampled: {video_id}')
+        
+        sample_frames(video_id)
 
         if not keep_video:
+            logger.info(f'Video removed: {video_id}')
             os.remove(video_path)
             os.remove(video_info_path)
 
         process_frames(video_id, force_process)
 
         if not keep_frames:
+            logger.info(f'Frames removed: {video_id}')
             for file in os.listdir(FRAMES_DIR):
                 if file.startswith(video_id):
                     os.remove(FRAMES_DIR / file)
