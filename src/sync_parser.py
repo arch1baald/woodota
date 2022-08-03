@@ -9,7 +9,7 @@ from loguru import logger
 from settings import REPLAY_DIR
 
 
-def download(url):
+def download(url: str) -> bytes:
     r = requests.get(url)
     r.raise_for_status()
     compressed_dem = r.content
@@ -17,7 +17,7 @@ def download(url):
     return dem
 
 
-def download_save(url):
+def download_save(url: str) -> str:
     right = url.split('/')[-1]
     match_salt = right.replace('dem.bz2', '')
     file_name = match_salt.split('_')[0]
@@ -30,7 +30,7 @@ def download_save(url):
     return path
 
 
-def download_parse_save(url):
+def download_parse_save(url: str) -> str:
     dem_path = download_save(url)
     jsonlines_path = dem_path.replace('.dem', '.jsonlines')
     cmd = f'curl localhost:5600 --data-binary "@{dem_path}" > {jsonlines_path}'

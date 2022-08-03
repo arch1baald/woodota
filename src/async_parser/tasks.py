@@ -1,6 +1,7 @@
 import os
 import subprocess
 from bz2 import decompress
+from typing import Any
 
 import requests
 from celery import chain
@@ -10,7 +11,7 @@ from .celery import app
 from settings import REPLAY_DIR
 
 
-def download(url):
+def download(url: str) -> bytes:
     logger.info(f'Downloading: {url}...')
     r = requests.get(url)
     r.raise_for_status()
@@ -21,7 +22,7 @@ def download(url):
 
 
 @app.task()
-def download_save(url):
+def download_save(url: str) -> str:
     right = url.split('/')[-1]
     match_salt = right.replace('dem.bz2', '')
     file_name = match_salt.split('_')[0]
@@ -44,7 +45,7 @@ class ClarityParserException(Exception):
 
 
 @app.task()
-def parse(dem_path, remove_dem=False):
+def parse(dem_path: str, remove_dem: bool = False) -> str:
     jsonlines_path = dem_path.replace('.dem', '.jsonlines')
 
     logger.info(f'Parsing {jsonlines_path}...')
@@ -62,7 +63,7 @@ def parse(dem_path, remove_dem=False):
     return jsonlines_path
 
 
-def download_parse_save(url):
+def download_parse_save(url: str) -> Any:
     res = chain(download_save.s(url), parse.s(True))()
     return res
 

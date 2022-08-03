@@ -8,26 +8,26 @@ from loguru import logger
 
 sys.path.append('src')
 sys.path.append(os.path.join('..', 'src'))
-from settings import REPLAY_DIR
+from settings import REPLAY_DIR  # noqa E402
 
 
 INTERNATIONAL_2021_ID = 13256
 
 
-def get_matches_by_tournament_id(tournament_id):
+def get_matches_by_tournament_id(tournament_id: str | int) -> list:
     r = requests.get(f'https://api.opendota.com/api/leagues/{tournament_id}/matches')
     matches = r.json()
     logger.info(f'Replays available: {len(matches)}')
     return matches
 
 
-def get_replays_metadata(tournament_id, limit=None):
+def get_replays_metadata(tournament_id: str | int, limit: int = None) -> list:
     matches = get_matches_by_tournament_id(tournament_id)
     replays = []
     for i, m in enumerate(matches):
         if limit is not None and i >= limit:
             break
-        
+
         match_id = m['match_id']
         logger.info(f'Retrieving replay for the match: {match_id}...')
 
@@ -43,7 +43,7 @@ def get_replays_metadata(tournament_id, limit=None):
     return replays
 
 
-def get_replay_urls(tournament_id, limit=None):
+def get_replay_urls(tournament_id: str | int, limit: int = None) -> list:
     replays = get_replays_metadata(tournament_id, limit)
     urls = []
     for replay in replays:
@@ -60,10 +60,10 @@ def get_replay_urls(tournament_id, limit=None):
     return urls
 
 
-def main():
+def main() -> list:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--limit', dest='limit', type=int, 
+        '--limit', dest='limit', type=int,
         default=None, help='Requests Limit to /api/replay'
     )
     parser.add_argument(

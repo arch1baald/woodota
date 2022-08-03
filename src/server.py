@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, Response, request, jsonify
 from loguru import logger
 
 from async_parser.tasks import download_parse_save
@@ -8,12 +8,12 @@ app = Flask(__name__)
 
 
 @app.route('/')
-def index():
+def index() -> str:
     return 'Send your queries to /parse'
 
 
 @app.route('/parse')
-def parse():
+def parse() -> Response:
     """
     Example: http://127.0.0.1:5000/parse?url=http://replay191.valve.net/570/6216665747_89886887.dem.bz2
     """

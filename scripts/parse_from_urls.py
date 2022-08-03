@@ -7,7 +7,7 @@ from loguru import logger
 
 sys.path.append('src')
 sys.path.append(os.path.join('..', 'src'))
-from settings import REPLAY_DIR
+from settings import REPLAY_DIR  # noqa E402
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
             except Exception as e:
                 logger.info(e)
                 continue
-            
+
             logger.info(r.json())
             time.sleep(0.05)
 

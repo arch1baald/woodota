@@ -1,9 +1,10 @@
 import logging
+from typing import Any
 
 
 class DisableLogger:
     def __enter__(self):
         logging.disable(logging.CRITICAL)
 
-    def __exit__(self, exit_type, exit_value, exit_traceback):
+    def __exit__(self, exception_type: Any, exception_value: Any, traceback: Any):
         logging.disable(logging.NOTSET)
