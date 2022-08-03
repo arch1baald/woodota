@@ -77,7 +77,7 @@ networkx==2.8.5
 notebook==6.4.12
 notebook-shim==0.1.0
 numpy==1.23.1
-opencv-python==4.6.0.66
+opencv-python==4.5.5.64
 opencv-python-headless==4.5.4.60
 opt-einsum==3.3.0
 packaging==21.3

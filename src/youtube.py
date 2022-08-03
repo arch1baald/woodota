@@ -40,13 +40,14 @@ def youtube_download(url: str) -> str | int:
     return video_id
 
 
-def sample_frames(video_id: str | int):
+def sample_frames(video_id: str | int, force: bool = False):
     video_path = VIDEO_DIR / f'{video_id}.mp4'
     output_prefix = FRAMES_DIR / video_id
-    for file in os.listdir(FRAMES_DIR):
-        if file.startswith(video_id):
-            logger.info(f'Frames already exists: {video_id}')
-            return
+    if not force:
+        for file in os.listdir(FRAMES_DIR):
+            if file.startswith(video_id):
+                logger.info(f'Frames already exists: {video_id}')
+                return
 
     logger.info(f'Sampling Frames from: {video_id}')
     cmd = f'''ffmpeg \
@@ -58,7 +59,7 @@ def sample_frames(video_id: str | int):
 
 
 @lru_cache
-def load_ocr_model() -> tuple(TrOCRProcessor, VisionEncoderDecoderModel):
+def load_ocr_model() -> tuple:
     model_version = "microsoft/trocr-base-printed"
     logger.info(f'Loading model from: {model_version}')
     processor = TrOCRProcessor.from_pretrained(model_version)
