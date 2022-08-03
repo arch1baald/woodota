@@ -21,7 +21,7 @@ def parse():
     logger.info(f'{dem_url=}')
     if dem_url is None:
         return jsonify(dict(
-            success=False, 
+            success=False,
             error='Demo URL not found'
         )), 400
     dem_url = dem_url.strip()

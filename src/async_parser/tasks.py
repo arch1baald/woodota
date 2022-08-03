@@ -27,7 +27,7 @@ def download_save(url):
     file_name = match_salt.split('_')[0]
     file_name += '.dem'
     path = os.path.join(REPLAY_DIR, file_name)
-    
+
     if os.path.exists(path):
         logger.info(f'Dem file already exists: {path}...')
         return path
@@ -55,7 +55,7 @@ def parse(dem_path, remove_dem=False):
         os.remove(jsonlines_path)
         raise ClarityParserException(
             f'Result file is empty: {jsonlines_path}...\nDid you forget to run odota/parser?')
-    
+
     if os.path.exists(dem_path) and remove_dem:
         logger.info(f'Removing temporary file {dem_path}...')
         os.remove(dem_path)
