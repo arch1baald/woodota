@@ -22,7 +22,7 @@ def download_save(url):
     match_salt = right.replace('dem.bz2', '')
     file_name = match_salt.split('_')[0]
     file_name += '.dem'
-    
+
     dem = download(url)
     path = os.path.join(REPLAY_DIR, file_name)
     with open(path, 'wb') as fout:

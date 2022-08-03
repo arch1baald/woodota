@@ -106,7 +106,7 @@ def process_frames(video_id, force=False):
 
         frame_id = file.split('__')[-1]
         frame_id = frame_id.replace('.bmp', '')
-        
+
         path = FRAMES_DIR / file
         crop = crop_frame(path)
         with DisableLogger():
@@ -128,7 +128,7 @@ def process_frames(video_id, force=False):
             )
             logfile.write(json.dumps(record))
             logfile.write('\n')
-        
+
         if i > 0 and i % 10 == 0:
             break
 
@@ -143,7 +143,7 @@ def main(keep_video=True, keep_frames=True, force_process=False):
         video_id = youtube_download(url)
         video_path = VIDEO_DIR / f'{video_id}.mp4'
         video_info_path = VIDEO_DIR / f'{video_id}.json'
-        
+
         sample_frames(video_id)
 
         if not keep_video:

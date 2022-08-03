@@ -21,7 +21,7 @@ if not os.path.exists(REPLAY_DIR):
 logger.info(f'{REPLAY_DIR=}')
 
 YOUTUBE_DIR = Path(ROOT_DIR) / 'youtube'
-VIDEO_DIR = YOUTUBE_DIR/ 'videos'
+VIDEO_DIR = YOUTUBE_DIR / 'videos'
 FRAMES_DIR = YOUTUBE_DIR / 'frames'
 TIMESTAMPS_DIR = YOUTUBE_DIR / 'timestamps'
 

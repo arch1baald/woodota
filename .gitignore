@@ -136,3 +136,4 @@ replays/*
 .DS_Store
 youtube/videos/*
 youtube/frames/*
+.vscode
