@@ -2,9 +2,11 @@ import os
 import subprocess
 import json
 from functools import lru_cache
+from pathlib import Path
 
 import yt_dlp
 import cv2
+import numpy as np
 from loguru import logger
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
@@ -13,7 +15,7 @@ from settings import VIDEO_DIR, FRAMES_DIR, TIMESTAMPS_DIR
 from utils import DisableLogger
 
 
-def youtube_download(url):
+def youtube_download(url: str) -> str | int:
     options = dict(
         format='mp4',
         outtmpl=f'{VIDEO_DIR}/%(id)s.%(ext)s',
@@ -38,7 +40,7 @@ def youtube_download(url):
     return video_id
 
 
-def sample_frames(video_id):
+def sample_frames(video_id: str | int):
     video_path = VIDEO_DIR / f'{video_id}.mp4'
     output_prefix = FRAMES_DIR / video_id
     for file in os.listdir(FRAMES_DIR):
@@ -56,7 +58,7 @@ def sample_frames(video_id):
 
 
 @lru_cache
-def load_ocr_model():
+def load_ocr_model() -> tuple(TrOCRProcessor, VisionEncoderDecoderModel):
     model_version = "microsoft/trocr-base-printed"
     logger.info(f'Loading model from: {model_version}')
     processor = TrOCRProcessor.from_pretrained(model_version)
@@ -64,7 +66,7 @@ def load_ocr_model():
     return processor, model
 
 
-def crop_frame(frame_path):
+def crop_frame(frame_path: Path) -> np.ndarray:
     image = cv2.imread(str(frame_path))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     bbox = (16, 23, 619, 653)
@@ -73,7 +75,7 @@ def crop_frame(frame_path):
     return crop
 
 
-def extract_text(image_array):
+def extract_text(image_array: np.ndarray) -> str:
     pil_image = Image.fromarray(image_array)
     processor, model = load_ocr_model()
     pixel_values = processor(pil_image, return_tensors='pt').pixel_values
@@ -82,7 +84,7 @@ def extract_text(image_array):
     return text
 
 
-def convert_to_timestamp(text):
+def convert_to_timestamp(text: str) -> int:
     sign = -1 if text.startswith('-') else 1
     digits = ''.join([c for c in text if c.isdigit()])
     seconds = digits[-2:]
@@ -93,7 +95,7 @@ def convert_to_timestamp(text):
     return timestamp
 
 
-def process_frames(video_id, force=False):
+def process_frames(video_id: str | int, force: bool = False):
     timestamps_path = TIMESTAMPS_DIR / f'{video_id}.log'
     if timestamps_path.exists() and not force:
         logger.info(f'Timestamps log already exitst: {timestamps_path}')
@@ -133,7 +135,7 @@ def process_frames(video_id, force=False):
             break
 
 
-def main(keep_video=True, keep_frames=True, force_process=False):
+def main(keep_video: bool = True, keep_frames: bool = True, force_process: bool = False):
     urls = [
         'https://youtu.be/sNj5QAzujAM',
         'https://youtu.be/ukbICbM4RR0',
