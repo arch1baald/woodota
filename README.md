@@ -3,8 +3,7 @@ Extract highlights from professional Dota 2 matches.
 
 ### TODO
 - Build and run with docker-compose
-- Add linter
-- Add typing
+- Refactor youtube.py
 
 ## Setup
 ### Create a virtual environment
