@@ -3,6 +3,7 @@ import subprocess
 import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Tuple
 
 import yt_dlp
 import cv2
@@ -12,19 +13,32 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
 
 from settings import VIDEO_DIR, FRAMES_DIR, TIMESTAMPS_DIR
-from utils import DisableLogger
+from utils import DisableLogger, EmptyDebugLogger
 
 
-def youtube_download(url: str) -> str | int:
+def get_video_metadata(url: str, save: bool = False) -> Tuple[str | int, dict]:
+    options = dict(
+        logger=EmptyDebugLogger,
+    )
+    with yt_dlp.YoutubeDL(options) as ydl:
+        metadata = ydl.extract_info(url, download=False)
+    video_id = metadata.get('id')
+
+    if save:
+        metadata_file = f'{video_id}.json'
+        video_metadata_path = VIDEO_DIR / metadata_file
+        with open(video_metadata_path, 'w') as fout:
+            json.dump(metadata, fout, indent=4)
+    return video_id, metadata
+
+
+def download_video(url: str, fetch_metadata: bool = True) -> str | int:
     options = dict(
         format='mp4',
         outtmpl=f'{VIDEO_DIR}/%(id)s.%(ext)s',
+        logger=EmptyDebugLogger,
     )
-    with yt_dlp.YoutubeDL(options) as ydl:
-        info = ydl.extract_info(url, download=False)
-    video_id = info.get('id')
-    info_file = f'{video_id}.json'
-    video_info_path = VIDEO_DIR / info_file
+    video_id, _ = get_video_metadata(url, save=fetch_metadata)
     video_file = f'{video_id}.mp4'
     video_path = VIDEO_DIR / video_file
     if video_path.exists():
@@ -34,9 +48,6 @@ def youtube_download(url: str) -> str | int:
     logger.info(f'Downloading: {url}')
     with yt_dlp.YoutubeDL(options) as ydl:
         ydl.download(url)
-
-    with open(video_info_path, 'w') as fout:
-        json.dump(info, fout, indent=4)
     return video_id
 
 
@@ -143,7 +154,7 @@ def main(keep_video: bool = True, keep_frames: bool = True, force_process: bool 
     ]
 
     for url in urls:
-        video_id = youtube_download(url)
+        video_id = download_video(url)
         video_path = VIDEO_DIR / f'{video_id}.mp4'
         video_info_path = VIDEO_DIR / f'{video_id}.json'
 

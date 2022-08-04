@@ -8,3 +8,8 @@ class DisableLogger:
 
     def __exit__(self, exception_type: Any, exception_value: Any, traceback: Any):
         logging.disable(logging.NOTSET)
+
+
+class EmptyDebugLogger:
+    def debug(self):
+        pass
