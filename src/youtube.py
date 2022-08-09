@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Tuple, List, Dict
 from datetime import datetime, timedelta
+from collections import Counter
 
 import yt_dlp
 import cv2
@@ -14,8 +15,8 @@ from loguru import logger
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
 
-from settings import VIDEO_DIR, FRAMES_DIR, TIMESTAMPS_DIR
-from search import search, search_top1
+from settings import YOUTUBE_DIR, VIDEO_DIR, FRAMES_DIR, TIMESTAMPS_DIR
+from search import search_top1
 from utils import DisableLogger, EmptyDebugLogger, query_opendota
 
 
@@ -112,17 +113,18 @@ def convert_to_timestamp(text: str) -> int:
     return timestamp
 
 
-def process_frames(video_id: str | int, force: bool = False):
-    timestamps_path = TIMESTAMPS_DIR / f'{video_id}.log'
+def process_frames(video_id: str | int, force: bool = False, frames_limit: int = None):
+    timestamps_path = TIMESTAMPS_DIR / f'{video_id}.jsonlines'
     if timestamps_path.exists() and not force:
         logger.info(f'Timestamps log already exitst: {timestamps_path}')
         return
 
     files = sorted(os.listdir(FRAMES_DIR))
-    for i, file in enumerate(files):
+    i = 0
+    for file in files:
         if not file.startswith(video_id) or (file == '.DS_Store'):
             continue
-
+        i += 1
         frame_id = file.split('__')[-1]
         frame_id = frame_id.replace('.bmp', '')
 
@@ -148,7 +150,8 @@ def process_frames(video_id: str | int, force: bool = False):
             logfile.write(json.dumps(record))
             logfile.write('\n')
 
-        if i > 0 and i % 10 == 0:
+        if frames_limit is not None and (i >= frames_limit):
+            logger.info(f'Reached frames limit: {frames_limit}')
             break
 
 
@@ -188,12 +191,10 @@ def get_nearest_matches(date: datetime) -> List[Dict]:
     return matches
 
 
-def generate_candidates(matches: Dict) -> Tuple[Dict, Dict]:
-    titles = dict()
+def generate_team_pairs(matches: List[Dict]) -> Dict:
     pairs = dict()
     for m in matches:
         match_id = m['match_id']
-        league = m['league']
         radiant_tag = m['radiant_tag']
         dire_tag = m['dire_tag']
         radiant_name = m['radiant_name']
@@ -205,72 +206,116 @@ def generate_candidates(matches: Dict) -> Tuple[Dict, Dict]:
         tag_pair_2 = f'{dire_tag} vs {radiant_tag}'
         for pair in (name_pair_1, name_pair_2, tag_pair_1, tag_pair_2):
             pairs[pair] = match_id
+    return pairs
 
-        title_from_names_1 = f'{name_pair_1} | {league}'
-        title_from_names_2 = f'{name_pair_2} | {league}'
-        title_from_tags_1 = f'{tag_pair_1} | {league}'
-        title_from_tags_2 = f'{tag_pair_2} | {league}'
-        for title in (title_from_names_1, title_from_names_2, title_from_tags_1, title_from_tags_2):
-            titles[title] = match_id
-    return pairs, titles
+
+def search_team_pairs(teams_pair: str, matches: List[Dict]) -> int:
+    pairs = generate_team_pairs(matches)
+    candidate = search_top1(teams_pair, list(pairs))
+    match_id = pairs[candidate]
+    return match_id
+
+
+def generate_team_tournaments(matches: List[Dict]) -> Dict:
+    team_tournaments = dict()
+    pairs = generate_team_pairs(matches)
+    for m in matches:
+        match_id = m['match_id']
+        league = m['league']
+        for pair, pair_match_id in pairs.items():
+            if match_id == pair_match_id:
+                team_tournament = f'{pair} | {league}'
+                team_tournaments[team_tournament] = match_id
+    return team_tournaments
+
+
+def search_team_tournament_pairs(teams_pair: str, tournament: str, matches: List[Dict]) -> int:
+    team_tournament = f'{teams_pair} | {tournament}'
+    team_tournaments = generate_team_tournaments(matches)
+    candidate = search_top1(team_tournament, list(team_tournaments))
+    match_id = team_tournaments[candidate]
+    return match_id
+
+
+def search_teams_after_tournament(teams_pair: str, tournament: str, matches: List[Dict]) -> int:
+    leagues = [m['league'] for m in matches]
+    tournament_candidate = search_top1(tournament, leagues)
+    tournament_matches = [m for m in matches if m['league'] == tournament_candidate]
+    tournament_pairs = generate_team_pairs(tournament_matches)
+    tournament_pairs_list = list(tournament_pairs.keys())
+    candidate = search_top1(teams_pair, tournament_pairs_list)
+    match_id = tournament_pairs[candidate]
+    return match_id
 
 
 def search_match(metadata: Dict) -> Tuple[Dict, int]:
-    # TODO: add tournament search
-    # TODO: add search without Dota 2 Highlights
-    # TODO: add search without comment in the middle
     # TODO: test on another channels
     title = metadata['fulltitle']
     upload_date = metadata['upload_date']
     upload_date = datetime.strptime(upload_date, '%Y%m%d')
     matches = get_nearest_matches(upload_date)
 
-    pairs, titles = generate_candidates(matches)
-    pairs_list, titles_list = list(pairs.keys()), list(titles)
+    channel_id = metadata['channel_id']
+    if channel_id == 'UCUqLL4VcEy4mXcQL0O_H_bg':
+        teams_pair, _, tournament = [t.strip() for t in title.split('-')]
+        tournament = tournament.replace('Dota 2 Highlights', '')
+        title = f'{teams_pair} | {tournament}'
+    else:
+        raise ValueError(f'Unknown channel: {channel_id}')
 
-    candidate_from_pairs = search_top1(title, pairs_list)
-    candidate_from_titles = search_top1(title, titles_list)
-    match_id_from_pairs = pairs[candidate_from_pairs]
-    match_id_from_titles = titles[candidate_from_titles]
+    match_ids = [
+        search_team_pairs(teams_pair, matches),
+        search_team_tournament_pairs(teams_pair, tournament, matches),
+        search_teams_after_tournament(teams_pair, tournament, matches),
+    ]
+    logger.debug(Counter(match_ids))
+    selected_match_id, confidence = Counter(match_ids).most_common(1)[0]
 
-    confidence = 0
-    confidence += match_id_from_pairs == match_id_from_titles
-
-    match = [m for m in matches if m['match_id'] == match_id_from_titles][0]
+    match = [m for m in matches if m['match_id'] == selected_match_id][0]
+    match['video_url'] = metadata['webpage_url']
+    match['chennel_id'] = channel_id
+    match['title'] = title
+    match['confidence'] = confidence
     logger.debug(f'Video Title: {title}')
-    logger.debug(f'Match Found: {match}, Confidence: {confidence}')
+    logger.debug(f'Match Found: {match}')
+
+    with open(YOUTUBE_DIR / 'matches.jsonlines', 'a') as fout:
+        json.dump(match, fout)
+        fout.write('\n')
     return match, confidence
 
 
-def main(keep_video: bool = True, keep_frames: bool = True, force_process: bool = False):
-    urls = [
-        # 'https://youtu.be/sNj5QAzujAM',
-        'https://youtu.be/ukbICbM4RR0',
-    ]
+def analyze_video(
+    url: str,
+    min_confidence: int = 3,
+    keep_video: bool = False,
+    keep_frames: bool = False,
+    force_process: bool = False,
+    frames_limit: int = None,
+):
+    """Download video from youtube, extract frames, analyze image, parse time, find match_id by title"""
+    logger.debug(f'{url=}, {min_confidence=}, {keep_video=}, {keep_frames=}, {force_process=}, {frames_limit=}')
 
-    for url in urls:
-        video_id, metadata = get_video_metadata(url, save=True)
-        download_video(url)
-        video_path = VIDEO_DIR / f'{video_id}.mp4'
-        video_info_path = VIDEO_DIR / f'{video_id}.json'
+    video_id, metadata = get_video_metadata(url, save=True)
+    match, confidence = search_match(metadata)
+    if confidence < min_confidence:
+        return
 
-        sample_frames(video_id)
+    download_video(url)
+    video_path = VIDEO_DIR / f'{video_id}.mp4'
+    video_info_path = VIDEO_DIR / f'{video_id}.json'
 
-        if not keep_video:
-            logger.info(f'Video removed: {video_id}')
-            os.remove(video_path)
-            os.remove(video_info_path)
+    sample_frames(video_id)
 
-        process_frames(video_id, force_process)
+    if not keep_video:
+        logger.info(f'Video removed: {video_id}')
+        os.remove(video_path)
+        os.remove(video_info_path)
 
-        if not keep_frames:
-            logger.info(f'Frames removed: {video_id}')
-            for file in os.listdir(FRAMES_DIR):
-                if file.startswith(video_id):
-                    os.remove(FRAMES_DIR / file)
+    process_frames(video_id, force_process, frames_limit)
 
-        match, confidene = search_match(metadata)
-
-
-if __name__ == '__main__':
-    main()
+    if not keep_frames:
+        logger.info(f'Frames removed: {video_id}')
+        for file in os.listdir(FRAMES_DIR):
+            if file.startswith(video_id):
+                os.remove(FRAMES_DIR / file)
