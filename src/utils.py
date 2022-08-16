@@ -14,8 +14,11 @@ class DisableLogger:
         logging.disable(logging.NOTSET)
 
 
-class EmptyDebugLogger:
-    def debug(self):
+class EmptyDebugLogger(logging.Logger):
+    def debug(self, *args, **kwargs):
+        pass
+
+    def warning(self, *args, **kwargs):
         pass
 
 
