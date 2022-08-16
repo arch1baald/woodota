@@ -177,11 +177,11 @@ def get_nearest_matches(date: datetime) -> List[Dict]:
         join leagues on matches.leagueid = leagues.leagueid
     WHERE
         start_time >= extract(epoch from timestamp '{start_time}')
-        and start_time <= extract(epoch from timestamp '{end_time}')
+        and start_time < extract(epoch from timestamp '{end_time}')
     ORDER BY
         start_time desc
     LIMIT
-        100
+        500
     '''
     matches = query_opendota(
         query,
