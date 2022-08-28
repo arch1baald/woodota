@@ -1,6 +1,7 @@
 import argparse
 import sys
 import traceback
+from argparse import ArgumentParser
 
 from loguru import logger
 
@@ -12,6 +13,10 @@ from youtube import analyze_video  # noqa
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--url', dest='url', type=str,
+        default=None, help='URL or video id to analyze'
+    )
     parser.add_argument(
         '--videos-limit', dest='videos_limit', type=int,
         default=None, help='Requests Limit to /api/replay'
@@ -38,6 +43,21 @@ def main():
     )
     args = parser.parse_args()
 
+    if args.url is not None:
+        url = args.url.strip()
+        try:
+            analyze_video(
+                url,
+                0,
+                args.keep_video,
+                args.keep_frames,
+                args.force_process,
+                args.frames_limit,
+            )
+        except Exception:
+            logger.error(traceback.format_exc())
+        return
+
     with open(YOUTUBE_DIR / 'urls.txt', 'r') as fin:
         for i, url in enumerate(fin):
             if args.videos_limit is not None and i >= args.videos_limit:
@@ -55,7 +75,6 @@ def main():
                 )
             except Exception:
                 logger.error(traceback.format_exc())
-                continue
 
 
 if __name__ == '__main__':

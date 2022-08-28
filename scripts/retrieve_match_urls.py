@@ -63,6 +63,10 @@ def get_replay_urls(tournament_id: str | int, limit: int = None) -> list:
 def main() -> list:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '--match_id', dest='match_id', type=int,
+        default=None, help='Retrieve url for specific match'
+    )
+    parser.add_argument(
         '--limit', dest='limit', type=int,
         default=None, help='Requests Limit to /api/replay'
     )
@@ -71,6 +75,20 @@ def main() -> list:
         default=INTERNATIONAL_2021_ID, help='Tournament ID'
     )
     args = parser.parse_args()
+
+    if args.match_id is not None:
+        r = requests.get(
+            'https://api.opendota.com/api/replays/',
+            params=dict(match_id=args.match_id)
+        )
+        r.raise_for_status()
+        replay = r.json()
+        cluster = replay[0]['cluster']
+        match_id = replay[0]['match_id']
+        replay_salt = replay[0]['replay_salt']
+        url = f'http://replay{cluster}.valve.net/570/{match_id}_{replay_salt}.dem.bz2'
+        logger.info(url)
+        return url
 
     logger.info(f'{args.tournament_id}, {args.limit}')
     urls = get_replay_urls(args.tournament_id, args.limit)
