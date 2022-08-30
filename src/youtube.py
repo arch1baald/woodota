@@ -21,7 +21,7 @@ from utils import DisableLogger, EmptyDebugLogger, query_opendota
 
 
 @lru_cache
-def get_video_metadata(url: str, save: bool = False) -> Tuple[str | int, dict]:
+def get_video_metadata(url: str, save: bool = False) -> Tuple[str | int, Dict]:
     options = dict(
         logger=EmptyDebugLogger,
     )

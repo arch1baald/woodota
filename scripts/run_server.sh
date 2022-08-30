@@ -1,1 +1,1 @@
-PYTHONPATH=src/ FLASK_APP=server flask run
+PYTHONPATH=src/ FLASK_APP=server FLASK_RUN_PORT=7000 flask run

@@ -43,12 +43,12 @@ python scripts/retrieve_match_urls.py --tournament 13256 --limit 15
 ## Parse Matches
 Parse match by URL<br>
 ```
-curl -X GET 'http://localhost:5000/parse?url=http://replay191.valve.net/570/6216665747_89886887.dem.bz2'
+curl -X GET 'http://localhost:7000/parse?url=http://replay191.valve.net/570/6216665747_89886887.dem.bz2'
 ```
 
 Parse first match from `urls.txt`<br>
 ```
-curl -X GET -G 'http://localhost:5000/parse' -d url=$(head -n 1 replays/urls.txt)
+curl -X GET -G 'http://localhost:7000/parse' -d url=$(head -n 1 replays/urls.txt)
 ```
 
 Parse all matches from `urls.txt`<br>
