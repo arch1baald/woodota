@@ -5,7 +5,7 @@ if [ "$(docker container inspect -f '{{.State.Running}}' $REDIS_CONTAINER)" == "
 then
     echo 'Container ID:' $(docker ps -f name=$REDIS_CONTAINER --format '{{.ID}}')
 else
-    sudo docker run --name $REDIS_CONTAINER -p 6379:6379 -d redis
+    docker run --name $REDIS_CONTAINER -p 6379:6379 -d redis
 fi
 
 # Run Workers
