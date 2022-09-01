@@ -7,6 +7,8 @@ from typing import Type, List, Dict, Tuple
 import pandas as pd
 import numpy as np
 
+from utils import TimeSeries, TimeTable
+
 
 class UnitToName(str, Enum):
     """
@@ -139,6 +141,10 @@ class UnitToName(str, Enum):
     CDOTA_Unit_Hero_Zuus = 'npc_dota_hero_zuus'
 
 
+class NotParsedError(Exception):
+    pass
+
+
 class Match:
     """Dota 2 match metadata and events from replay"""
 
@@ -181,6 +187,16 @@ class Match:
         self._players = players
         return self._players
 
+    def get_player(self, hero_name: str):
+        if self.players is None:
+            raise NotParsedError(f"Match {self.match_id} has no players")
+
+        for player in self.players:
+            if player.hero_name == hero_name:
+                return player
+        else:
+            return None
+
     @lru_cache
     def _parse_events(self):
         """
@@ -205,6 +221,9 @@ class Match:
                 if e['type'] == 'epilogue':
                     epilogue = e
 
+        if not events:
+            raise NotParsedError(f'Events list is empty for: {self.jsonlines_path}')
+
         self._events = events
         self.unit_to_slot = unit_to_slot
         self.slot_to_unit = {slot: name for name, slot in self.unit_to_slot.items()}
@@ -221,24 +240,9 @@ class Match:
         return steam_ids
 
 
-class TimeSeries(pd.Series):
-    def __init__(self, *args: Tuple, **kwargs: Dict):
-        super().__init__(*args, **kwargs)
-
-    def t(self, start_time: int = None, end_time: int = None) -> pd.Series:
-        if start_time is not None and end_time is not None:
-            series = self[(self.index >= start_time) & (self.index <= end_time)]
-        elif start_time is not None and end_time is None:
-            series = self[(self.index >= start_time)]
-        elif end_time is not None and start_time is None:
-            series = self[(self.index <= end_time)]
-        else:
-            series = self
-        return series
-
-
 class MatchPlayer:
     """Dota 2 match participant"""
+    SMOOTH_WINDOW = 3
 
     def __init__(self, match: Match, slot: int, hero_name: str, steam_id: int = None):
         self.match = match
@@ -271,4 +275,42 @@ class MatchPlayer:
                 time.append(e['time'])
                 health.append(e['hp'])
         series = TimeSeries(index=time, data=health, name='hp')
+        return series
+
+    @property
+    @lru_cache
+    def deaths(self) -> TimeSeries:
+        events = []
+        for e in self.events:
+            if (
+                e['type'] == 'DOTA_COMBATLOG_DEATH' and
+                e['targetsourcename'] == self.hero_name and
+                e['targethero'] and
+                not e['targetillusion']
+            ):
+                events.append(e)
+        df = TimeTable(events)
+        return df
+
+    @property
+    @lru_cache
+    def dhp(self) -> TimeSeries:
+        """
+        Discrete difference of player hp
+
+        hp[i + 1] - hp[i]
+        """
+        discrete_difference = np.diff(self.hp)
+        discrete_difference = np.append(np.nan, discrete_difference)
+        series = TimeSeries(index=self.hp.index, data=discrete_difference, name='dhp')
+        series.fillna(method='bfill', inplace=True)
+        return series
+
+    @property
+    @lru_cache
+    def sdhp(self) -> TimeSeries:
+        """Smooth discrete difference of player hp"""
+        moving_average = self.dhp.rolling(MatchPlayer.SMOOTH_WINDOW).mean()
+        moving_average = moving_average.fillna(method='bfill')
+        series = TimeSeries(index=self.dhp.index, data=moving_average, name='sdhp')
         return series
