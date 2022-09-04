@@ -24,6 +24,10 @@ class BaseSigal(abc.ABC):
         return self.player.hp
 
     @property
+    def max_hp(self) -> TimeSeries:
+        return self.player.max_hp
+
+    @property
     def dhp(self) -> TimeSeries:
         return self.player.dhp
 
@@ -33,11 +37,20 @@ class BaseSigal(abc.ABC):
 
 
 class SignalHP(BaseSigal):
-    HP_RATE_THRESHOLD = -10
+    HP_RATE_THRESHOLD = -20
+    MAX_HP_THRESHOLD = 0.3
 
     def __init__(self, player: MatchPlayer):
         super().__init__(player)
 
-    def detect(self) -> TimeSeries:
+    def get_negative_hp_trend(self) -> TimeSeries:
         binary_mask = self.sdhp < SignalHP.HP_RATE_THRESHOLD
         return TimeSeries(binary_mask)
+
+    def get_low_hp(self) -> TimeSeries:
+        series = self.hp / self.max_hp
+        binary_mask = series < SignalHP.MAX_HP_THRESHOLD
+        return binary_mask
+
+    def detect(self) -> TimeSeries:
+        pass
