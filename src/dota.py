@@ -242,7 +242,8 @@ class Match:
 
 class MatchPlayer:
     """Dota 2 match participant"""
-    SMOOTH_WINDOW = 3
+    DHP_SMOOTH_WINDOW = 3
+    MAX_HP_WINDOW = 120
 
     def __init__(self, match: Match, slot: int, hero_name: str, steam_id: int = None):
         self.match = match
@@ -271,11 +272,22 @@ class MatchPlayer:
         time = []
         health = []
         for e in self.events:
-            if e['type'] == 'interval' and e.get('unit', 'unknown_unit') == self.unit:
-                time.append(e['time'])
-                health.append(e['hp'])
+            try:
+                if e['type'] == 'interval' and e.get('unit', 'unknown_unit') == self.unit:
+                    time.append(e['time'])
+                    health.append(e['hp'])
+            except Exception:
+                print(e)
+                break
         series = TimeSeries(index=time, data=health, name='hp')
         return series
+
+    @property
+    @lru_cache
+    def max_hp(self) -> TimeSeries:
+        series = self.hp.rolling(MatchPlayer.MAX_HP_WINDOW).max()
+        series = series.fillna(method='bfill')
+        return TimeSeries(series)
 
     @property
     @lru_cache
@@ -310,7 +322,7 @@ class MatchPlayer:
     @lru_cache
     def sdhp(self) -> TimeSeries:
         """Smooth discrete difference of player hp"""
-        moving_average = self.dhp.rolling(MatchPlayer.SMOOTH_WINDOW).mean()
+        moving_average = self.dhp.rolling(MatchPlayer.DHP_SMOOTH_WINDOW).mean()
         moving_average = moving_average.fillna(method='bfill')
         series = TimeSeries(index=self.dhp.index, data=moving_average, name='sdhp')
         return series
