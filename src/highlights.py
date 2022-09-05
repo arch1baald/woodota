@@ -1,56 +1,102 @@
-import abc
+from typing import List, Dict
 
 from dota import MatchPlayer
-from utils import TimeSeries, TimeTable
+from utils import TimeSeries
+from settings import HP_RATE_THRESHOLD, MAX_HP_THRESHOLD, MERGE_GAP
 
 
-class BaseSigal(abc.ABC):
+def convert_binary_mask_to_intervals(binary_mask: TimeSeries) -> List[Dict]:
+    if binary_mask.empty:
+        return []
 
-    def __init__(self, player: MatchPlayer):
-        self.player = player
+    intervals = [dict()]
+    prev_flag = False
+    for time, flag in binary_mask.iteritems():
+        last_interval = intervals[-1]
+        if flag is True and prev_flag is False:
+            last_interval['start'] = time
+        if flag is False and prev_flag is True:
+            last_interval['end'] = time
+            intervals.append(dict())
+        prev_flag = flag
 
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__} for {self.player}'
+    last_interval = intervals[-1]
+    if not last_interval:
+        intervals.pop()
 
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    # @abc.abstractmethod()
-    def detect(self):
-        pass
-
-    @property
-    def hp(self) -> TimeSeries:
-        return self.player.hp
-
-    @property
-    def max_hp(self) -> TimeSeries:
-        return self.player.max_hp
-
-    @property
-    def dhp(self) -> TimeSeries:
-        return self.player.dhp
-
-    @property
-    def sdhp(self) -> TimeSeries:
-        return self.player.sdhp
+    if 'start' in last_interval and 'end' not in last_interval:
+        series_last_time = binary_mask.index[-1]
+        if last_interval['start'] != series_last_time:
+            last_interval['end'] = series_last_time
+        else:
+            intervals.pop()
+    return intervals
 
 
-class SignalHP(BaseSigal):
-    HP_RATE_THRESHOLD = -20
-    MAX_HP_THRESHOLD = 0.3
+def merge_close_intervals(intervals: List[Dict], gap: int) -> List[Dict]:
+    """
+    Merges intervals if difference between start and end is less or equal to gap
+    """
+    if len(intervals) < 2:
+        return intervals
 
-    def __init__(self, player: MatchPlayer):
-        super().__init__(player)
+    intervals = sorted(intervals, key=lambda dct: (dct['start'], dct['end']))
+    merged = []
+    prev = intervals[0]
+    for current in intervals[1:]:
+        if current['start'] <= (prev['end'] + gap):
+            prev = dict(
+                start=prev['start'],
+                end=max(current['end'], prev['end'])
+            )
+        else:
+            merged.append(prev)
+            prev = current
+    if not merged or merged[-1] != prev:
+        merged.append(prev)
+    return merged
 
-    def get_negative_hp_trend(self) -> TimeSeries:
-        binary_mask = self.sdhp < SignalHP.HP_RATE_THRESHOLD
-        return TimeSeries(binary_mask)
 
-    def get_low_hp(self) -> TimeSeries:
-        series = self.hp / self.max_hp
-        binary_mask = series < SignalHP.MAX_HP_THRESHOLD
-        return binary_mask
+def has_intersection(interval1: Dict, interval2: Dict, gap: int = 0) -> bool:
+    """
+    By default gap = 0, checks for strict intersection
+    """
+    merged = merge_close_intervals([interval1, interval2], gap)
+    return len(merged) < 2
 
-    def detect(self) -> TimeSeries:
-        pass
+
+def find_hp_decreasing_intervals(player: MatchPlayer) -> List[Dict]:
+    """
+    Signal with intervals where player has negative hp diff
+    """
+    binary_mask = player.sdhp < HP_RATE_THRESHOLD
+    intervals = convert_binary_mask_to_intervals(binary_mask)
+    intervals = merge_close_intervals(intervals, MERGE_GAP)
+    return intervals
+
+
+def find_low_hp_intervals(player: MatchPlayer) -> List[Dict]:
+    """
+    Signal with intervals where player has low hp
+    """
+    series = player.hp / player.max_hp
+    binary_mask = series < MAX_HP_THRESHOLD
+    intervals = convert_binary_mask_to_intervals(binary_mask)
+    intervals = merge_close_intervals(intervals, MERGE_GAP)
+    return intervals
+
+
+def find_low_and_decreasing_hp_intervals(player: MatchPlayer) -> List[Dict]:
+    """
+    Signal with intervals where player has negative hp diff and has low hp
+    """
+    hp_decreasing_intervals = find_hp_decreasing_intervals(player)
+    low_hp_intervals = find_low_hp_intervals(player)
+    low_and_decreasing_hp_intervals = []
+    for hp_decreasing_interval in hp_decreasing_intervals:
+        for low_hp_interval in low_hp_intervals:
+            if hp_decreasing_interval['end'] < low_hp_interval['start']:
+                break
+            if has_intersection(hp_decreasing_interval, low_hp_interval):
+                low_and_decreasing_hp_intervals.append(hp_decreasing_interval)
+    return low_and_decreasing_hp_intervals
