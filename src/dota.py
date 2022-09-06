@@ -2,12 +2,12 @@ import json
 from enum import Enum
 from pathlib import PosixPath
 from functools import lru_cache
-from typing import Type, List, Dict, Tuple
+from typing import List, Dict
 
-import pandas as pd
 import numpy as np
 
 from utils import TimeSeries, TimeTable
+from highlights import find_attacks
 
 
 class UnitToName(str, Enum):
@@ -306,6 +306,37 @@ class MatchPlayer:
 
     @property
     @lru_cache
+    def hero_damage_in(self) -> TimeTable:
+        events = []
+        for e in self.events:
+            if (
+                e['type'] == 'DOTA_COMBATLOG_DAMAGE' and
+                e['targetsourcename'] == self.hero_name and
+                e['targethero'] and
+                not e['targetillusion'] and
+                (e['attackerhero'] or e['attackerillusion'])
+            ):
+                events.append(e)
+        df = TimeTable(events)
+        return df
+
+    @property
+    @lru_cache
+    def hero_damage_out(self) -> TimeTable:
+        events = []
+        for e in self.events:
+            if (
+                e['type'] == 'DOTA_COMBATLOG_DAMAGE' and
+                e['sourcename'] == self.hero_name and
+                e['targethero'] and
+                not e['targetillusion']
+            ):
+                events.append(e)
+        df = TimeTable(events)
+        return df
+
+    @property
+    @lru_cache
     def dhp(self) -> TimeSeries:
         """
         Discrete difference of player hp
@@ -326,3 +357,25 @@ class MatchPlayer:
         moving_average = moving_average.fillna(method='bfill')
         series = TimeSeries(index=self.dhp.index, data=moving_average, name='sdhp')
         return series
+
+    @property
+    @lru_cache
+    def as_target(self) -> TimeTable:
+        """Time intervals where players was attacked but not necessarily killed"""
+        intervals = find_attacks(self)
+        df = TimeTable(intervals)
+        df['target'] = self
+        return df
+
+    @property
+    @lru_cache
+    def as_attacker(self) -> TimeTable:
+        """Time intervals where player in attacks to other players"""
+        intervals = []
+        for player in self.match.players:
+            for _, interval in player.as_target.iterrows():
+                attackers = interval['attacker_heroes']
+                if self in attackers:
+                    intervals.append(interval)
+        intervals.sort(key=lambda dct: dct['start'])
+        return TimeTable(intervals)
