@@ -1,13 +1,15 @@
 import json
 from enum import Enum
 from pathlib import PosixPath
-from functools import lru_cache
+from functools import cached_property
 from typing import List, Dict, Optional
 
 import numpy as np
+import pandas as pd
 
-from utils import TimeSeries, TimeTable
-from highlights import find_attacks
+from settings import MERGE_GAP
+from utils import TimeSeries, TimeTable, merge_close_intervals
+from attacks import find_attacks
 
 
 class UnitToName(str, Enum):
@@ -166,39 +168,18 @@ class Match:
     def __repr__(self) -> str:
         return self.__str__()
 
-    @property
+    @cached_property
     def events(self) -> List[Dict]:
-        if self._events is not None:
-            return self._events
-
-        self._parse_events()
+        self.parse()
         return self._events
 
-    @property
+    @cached_property
     def players(self) -> List:
-        if self._players is not None:
-            return self._players
-
-        self._parse_events()
-        players = []
-        for slot, hero_name, steam_id in zip(self.slot_to_name.keys(), self.name_to_slot.keys(), self.steam_ids):
-            player = MatchPlayer(self, slot, hero_name, steam_id)
-            players.append(player)
-        self._players = players
+        if self._players is None:
+            self.parse()
         return self._players
 
-    def get_player(self, hero_name: str) -> Optional['MatchPlayer']:
-        if self.players is None:
-            raise NotParsedError(f"Match {self.match_id} has no players")
-
-        for player in self.players:
-            if player.hero_name == hero_name:
-                return player
-        else:
-            return None
-
-    @lru_cache
-    def _parse_events(self):
+    def parse(self) -> None:
         """
         Load events from the parsed replay.
 
@@ -230,6 +211,7 @@ class Match:
         self.name_to_slot = {UnitToName[unit].value: slot for unit, slot in unit_to_slot.items()}
         self.slot_to_name = {slot: name for name, slot in self.name_to_slot.items()}
         self.steam_ids = self._get_steam_ids_from_epilogue(epilogue)
+        self._players = self._construct_players()
 
     def _get_steam_ids_from_epilogue(self, epilogue: Dict) -> List[int]:
         epilogue = json.loads(epilogue['key'])
@@ -238,6 +220,35 @@ class Match:
         players_info = dota_info['playerInfo_']
         steam_ids = [p['steamid_'] for p in players_info]
         return steam_ids
+
+    def _construct_players(self) -> List['MatchPlayer']:
+        players = []
+        for slot, hero_name, steam_id in zip(self.slot_to_name.keys(), self.name_to_slot.keys(), self.steam_ids):
+            player = MatchPlayer(self, slot, hero_name, steam_id)
+            players.append(player)
+        return players
+
+    def get_player(self, hero_name: str) -> Optional['MatchPlayer']:
+        if self.players is None:
+            raise NotParsedError(f"Match {self.match_id} has no players")
+
+        for player in self.players:
+            if player.hero_name == hero_name:
+                return player
+        else:
+            return None
+
+    @cached_property
+    def action_moments(self) -> TimeTable:
+        moments = []
+        for player in self.players:
+            moments.append(player.action_moments)
+        df_moments = pd.concat(moments)
+        moments = df_moments[['start', 'end']].to_dict('records')
+        moments = merge_close_intervals(moments, MERGE_GAP)
+        df_moments = TimeTable(moments)
+        df_moments['time'] = df_moments['start']
+        return df_moments
 
 
 class MatchPlayer:
@@ -262,12 +273,11 @@ class MatchPlayer:
     def __repr__(self) -> str:
         return self.__str__()
 
-    @property
+    @cached_property
     def events(self) -> List[Dict]:
         return self.match.events
 
-    @property
-    @lru_cache
+    @cached_property
     def hp(self) -> TimeSeries:
         time = []
         health = []
@@ -282,15 +292,13 @@ class MatchPlayer:
         series = TimeSeries(index=time, data=health, name='hp')
         return series
 
-    @property
-    @lru_cache
+    @cached_property
     def max_hp(self) -> TimeSeries:
         series = self.hp.rolling(MatchPlayer.MAX_HP_WINDOW).max()
         series = series.fillna(method='bfill')
         return TimeSeries(series)
 
-    @property
-    @lru_cache
+    @cached_property
     def deaths(self) -> TimeSeries:
         events = []
         for e in self.events:
@@ -304,8 +312,7 @@ class MatchPlayer:
         df = TimeTable(events)
         return df
 
-    @property
-    @lru_cache
+    @cached_property
     def hero_damage_in(self) -> TimeTable:
         events = []
         for e in self.events:
@@ -320,8 +327,7 @@ class MatchPlayer:
         df = TimeTable(events)
         return df
 
-    @property
-    @lru_cache
+    @cached_property
     def hero_damage_out(self) -> TimeTable:
         events = []
         for e in self.events:
@@ -335,8 +341,7 @@ class MatchPlayer:
         df = TimeTable(events)
         return df
 
-    @property
-    @lru_cache
+    @cached_property
     def dhp(self) -> TimeSeries:
         """
         Discrete difference of player hp
@@ -349,8 +354,7 @@ class MatchPlayer:
         series.fillna(method='bfill', inplace=True)
         return series
 
-    @property
-    @lru_cache
+    @cached_property
     def sdhp(self) -> TimeSeries:
         """Smooth discrete difference of player hp"""
         moving_average = self.dhp.rolling(MatchPlayer.DHP_SMOOTH_WINDOW).mean()
@@ -358,19 +362,17 @@ class MatchPlayer:
         series = TimeSeries(index=self.dhp.index, data=moving_average, name='sdhp')
         return series
 
-    @property
-    @lru_cache
+    @cached_property
     def as_target(self) -> TimeTable:
-        """Time intervals where players was attacked but not necessarily killed"""
+        """Time intervals where the player was attacked but not necessarily killed"""
         intervals = find_attacks(self)
         df = TimeTable(intervals)
         df['target'] = self
         return df
 
-    @property
-    @lru_cache
+    @cached_property
     def as_attacker(self) -> TimeTable:
-        """Time intervals where player in attacks to other players"""
+        """Time intervals where the player attacked other players"""
         intervals = []
         for player in self.match.players:
             for _, interval in player.as_target.iterrows():
@@ -379,3 +381,17 @@ class MatchPlayer:
                     intervals.append(interval)
         intervals.sort(key=lambda dct: dct['start'])
         return TimeTable(intervals)
+
+    @cached_property
+    def action_moments(self) -> TimeTable:
+        """Time intervals where the player escaped attack on it or participated in a kill"""
+        df_escapes = self.as_target
+        df_escapes = df_escapes[(~df_escapes['target_dead']) & df_escapes['attacker_heroes']]
+        df_attacks = self.as_attacker
+        df_attacks = df_attacks[df_attacks['target_dead']]
+        df_moments = pd.concat([df_escapes, df_attacks])
+        moments = df_moments[['start', 'end']].to_dict('records')
+        moments = merge_close_intervals(moments, MERGE_GAP)
+        df_moments = TimeTable(moments)
+        df_moments['time'] = df_moments['start']
+        return df_moments

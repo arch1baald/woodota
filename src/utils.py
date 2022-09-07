@@ -1,4 +1,6 @@
 import logging
+import functools
+import weakref
 from typing import Any, List, Dict, Tuple
 
 import requests
@@ -67,3 +69,65 @@ class TimeTable(pd.DataFrame):
         else:
             df = self
         return TimeTable(df)
+
+
+def convert_binary_mask_to_intervals(binary_mask: TimeSeries) -> List[Dict]:
+    if binary_mask.empty:
+        return []
+
+    intervals = [dict()]
+    prev_flag = False
+    for time, flag in binary_mask.iteritems():
+        last_interval = intervals[-1]
+        if flag is True and prev_flag is False:
+            last_interval['start'] = time
+        if flag is False and prev_flag is True:
+            last_interval['end'] = time
+            intervals.append(dict())
+        prev_flag = flag
+
+    last_interval = intervals[-1]
+    if not last_interval:
+        intervals.pop()
+
+    if 'start' in last_interval and 'end' not in last_interval:
+        series_last_time = binary_mask.index[-1]
+        if last_interval['start'] != series_last_time:
+            last_interval['end'] = series_last_time
+        else:
+            intervals.pop()
+    return intervals
+
+
+def merge_close_intervals(intervals: List[Dict], gap: int) -> List[Dict]:
+    """
+    Merges intervals if difference between start and end is less or equal to gap
+    """
+    if len(intervals) < 2:
+        return intervals
+
+    intervals = sorted(intervals, key=lambda dct: (dct['start'], dct['end']))
+    merged = []
+    prev = intervals[0]
+    for current in intervals[1:]:
+        if current['start'] <= (prev['end'] + gap):
+            prev = dict(
+                start=prev['start'],
+                end=max(current['end'], prev['end'])
+            )
+        else:
+            merged.append(prev)
+            prev = current
+    if not merged or merged[-1] != prev:
+        merged.append(prev)
+    return merged
+
+
+def has_intersection(interval1: Dict, interval2: Dict, gap: int = 0) -> bool:
+    """By default gap = 0, checks for strict intersection"""
+    merged = merge_close_intervals([interval1, interval2], gap)
+    return len(merged) < 2
+
+
+def flatten(list_of_lists: List) -> List:
+    return [item for sublist in list_of_lists for item in sublist]
