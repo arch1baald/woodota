@@ -390,6 +390,9 @@ class MatchPlayer:
         df_attacks = self.as_attacker
         df_attacks = df_attacks[df_attacks['target_dead']]
         df_moments = pd.concat([df_escapes, df_attacks])
+        if df_moments.empty:
+            return TimeTable([])
+
         moments = df_moments[['start', 'end']].to_dict('records')
         moments = merge_close_intervals(moments, MERGE_GAP)
         df_moments = TimeTable(moments)

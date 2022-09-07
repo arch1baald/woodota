@@ -129,5 +129,41 @@ def has_intersection(interval1: Dict, interval2: Dict, gap: int = 0) -> bool:
     return len(merged) < 2
 
 
+def get_intersection(interval1: Dict, interval2: Dict) -> Dict | None:
+    if interval1['start'] > interval2['end'] or interval2['start'] > interval1['end']:
+        return None
+    start = max(interval1['start'], interval2['start'])
+    end = min(interval1['end'], interval2['end'])
+    intersection = dict(
+        start=start,
+        end=end
+    )
+    return intersection
+
+
+def get_intersections(intervals1: List[Dict], intervals2: List[Dict]) -> List[Dict]:
+    intersections = []
+    intervals1 = sorted(intervals1, key=lambda dct: dct['start'])
+    intervals2 = sorted(intervals2, key=lambda dct: dct['start'])
+    for i1 in intervals1:
+        for i2 in intervals2:
+            if i2['start'] > i1['end']:
+                break
+            intersection = get_intersection(i1, i2)
+            if intersection:
+                intersections.append(intersection)
+    return intersections
+
+
+def calculate_iou(intervals1: List[Dict], intervals2: List[Dict]):
+    """Calculates Intersection over Union for intervals"""
+    intersections = get_intersections(intervals1, intervals2)
+    union = merge_close_intervals(intervals1 + intervals2, gap=0)
+    total_intersection = sum([i['end'] - i['start'] for i in intersections])
+    total_union = sum([i['end'] - i['start'] for i in union])
+    iou = total_intersection / total_union
+    return iou
+
+
 def flatten(list_of_lists: List) -> List:
     return [item for sublist in list_of_lists for item in sublist]
