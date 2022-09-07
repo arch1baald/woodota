@@ -167,3 +167,9 @@ def calculate_iou(intervals1: List[Dict], intervals2: List[Dict]):
 
 def flatten(list_of_lists: List) -> List:
     return [item for sublist in list_of_lists for item in sublist]
+
+
+def convert_to_dota_clock_format(seconds):
+    minutes = str(seconds // 60).zfill(2)
+    secs = str(seconds % 60).zfill(2)
+    return f'{minutes}:{secs}'
