@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from dota import MatchPlayer
+import dota
 from utils import TimeSeries
 from settings import HP_RATE_THRESHOLD, MAX_HP_THRESHOLD, MERGE_GAP
 
@@ -63,7 +63,7 @@ def has_intersection(interval1: Dict, interval2: Dict, gap: int = 0) -> bool:
     return len(merged) < 2
 
 
-def find_hp_decreasing_intervals(player: MatchPlayer) -> List[Dict]:
+def find_hp_decreasing_intervals(player: 'dota.MatchPlayer') -> List[Dict]:
     """Signal with intervals where player has negative hp diff"""
     binary_mask = player.sdhp < HP_RATE_THRESHOLD
     intervals = convert_binary_mask_to_intervals(binary_mask)
@@ -71,7 +71,7 @@ def find_hp_decreasing_intervals(player: MatchPlayer) -> List[Dict]:
     return intervals
 
 
-def find_low_hp_intervals(player: MatchPlayer) -> List[Dict]:
+def find_low_hp_intervals(player: 'dota.MatchPlayer') -> List[Dict]:
     """Signal with intervals where player has low hp"""
     series = player.hp / player.max_hp
     binary_mask = series < MAX_HP_THRESHOLD
@@ -80,7 +80,7 @@ def find_low_hp_intervals(player: MatchPlayer) -> List[Dict]:
     return intervals
 
 
-def find_low_and_decreasing_hp_intervals(player: MatchPlayer) -> List[Dict]:
+def find_low_and_decreasing_hp_intervals(player: 'dota.MatchPlayer') -> List[Dict]:
     """Signal with intervals where player has negative hp diff and has low hp"""
     hp_decreasing_intervals = find_hp_decreasing_intervals(player)
     low_hp_intervals = find_low_hp_intervals(player)
@@ -94,7 +94,7 @@ def find_low_and_decreasing_hp_intervals(player: MatchPlayer) -> List[Dict]:
     return low_and_decreasing_hp_intervals
 
 
-def find_attacks(player: MatchPlayer) -> List[Dict]:
+def find_attacks(player: 'dota.MatchPlayer') -> List[Dict]:
     """Intervals where player was attecked"""
     match = player.match
     intervals = find_low_and_decreasing_hp_intervals(player)

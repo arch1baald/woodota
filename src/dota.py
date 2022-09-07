@@ -2,7 +2,7 @@ import json
 from enum import Enum
 from pathlib import PosixPath
 from functools import lru_cache
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import numpy as np
 
@@ -187,7 +187,7 @@ class Match:
         self._players = players
         return self._players
 
-    def get_player(self, hero_name: str):
+    def get_player(self, hero_name: str) -> Optional['MatchPlayer']:
         if self.players is None:
             raise NotParsedError(f"Match {self.match_id} has no players")
 
