@@ -21,6 +21,10 @@ logger.info(f'{REPLAY_DIR=}')
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 logger.info(f'{REDIS_URL=}')
 
+CLARITY_HOST = os.environ.get('CLARITY_HOST', 'localhost')
+CLARITY_PORT = os.environ.get('CLARITY_PORT', 5600)
+logger.info(f'{CLARITY_HOST=}, {CLARITY_PORT=}')
+
 YOUTUBE_DIR = Path(ROOT_DIR) / 'youtube'
 VIDEO_DIR = YOUTUBE_DIR / 'videos'
 FRAMES_DIR = YOUTUBE_DIR / 'frames'

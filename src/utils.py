@@ -1,6 +1,4 @@
 import logging
-import functools
-import weakref
 from typing import Any, List, Dict, Tuple
 
 import requests
@@ -18,10 +16,10 @@ class DisableLogger:
 
 
 class EmptyDebugLogger(logging.Logger):
-    def debug(self, *args, **kwargs):
+    def debug(self, *args: Any, **kwargs: Any):
         pass
 
-    def warning(self, *args, **kwargs):
+    def warning(self, *args: Any, **kwargs: Any):
         pass
 
 
@@ -155,7 +153,7 @@ def get_intersections(intervals1: List[Dict], intervals2: List[Dict]) -> List[Di
     return intersections
 
 
-def calculate_iou(intervals1: List[Dict], intervals2: List[Dict]):
+def calculate_iou(intervals1: List[Dict], intervals2: List[Dict]) -> float:
     """Calculates Intersection over Union for intervals"""
     intersections = get_intersections(intervals1, intervals2)
     union = merge_close_intervals(intervals1 + intervals2, gap=0)

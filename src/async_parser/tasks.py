@@ -8,7 +8,7 @@ from celery import chain
 from loguru import logger
 
 from .celery import app
-from settings import REPLAY_DIR
+from settings import REPLAY_DIR, CLARITY_HOST, CLARITY_PORT
 
 
 def download(url: str) -> bytes:
@@ -49,7 +49,7 @@ def parse(dem_path: str, remove_dem: bool = False) -> str:
     jsonlines_path = dem_path.replace('.dem', '.jsonlines')
 
     logger.info(f'Parsing {jsonlines_path}...')
-    cmd = f'curl localhost:5600 --data-binary "@{dem_path}" > {jsonlines_path}'
+    cmd = f'curl {CLARITY_HOST}:{CLARITY_PORT} --data-binary "@{dem_path}" > {jsonlines_path}'
     subprocess.run(cmd, shell=True)
 
     if os.path.getsize(jsonlines_path) == 0:
