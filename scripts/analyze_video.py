@@ -1,7 +1,6 @@
 import argparse
 import sys
 import traceback
-from argparse import ArgumentParser
 
 from loguru import logger
 

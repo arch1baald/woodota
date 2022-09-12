@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:latest
+    container_name: dota_redis
+    hostname: dota_redis
+
+  clarity:
+    image: arch1baald/clarity:latest
+    container_name: dota_clarity
+    ports:
+      - "5600:5600"
+
+  api:
+    build: .
+    container_name: dota_api
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://dota_redis
+      - CLARITY_HOST=dota_clarity
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./replays:/app/replays
+      - ./youtube:/app/youtube
+    command: ["/bin/bash", "scripts/run_server.sh", "production", "INFO"]
+
+  worker:
+    build: .
+    container_name: dota_worker
+
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://dota_redis
+      - CLARITY_HOST=dota_clarity
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./replays:/app/replays
+      - ./youtube:/app/youtube
+    command: ["/bin/bash", "scripts/run_workers.sh"]

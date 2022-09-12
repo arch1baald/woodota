@@ -1,0 +1,16 @@
+.DS_Store
+env/
+.env
+__pycache__
+.pytest_cache
+.tox
+.vscode
+.ipynb_checkpoints/
+.git
+
+notebooks/
+parser/
+replays/*
+youtube/frames/*
+youtube/timestamps/*
+youtube/videos/*
