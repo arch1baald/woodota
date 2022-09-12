@@ -3,13 +3,13 @@ Extract highlights from professional Dota 2 matches.
 
 ### TODO
 - [x] Build and run with docker-compose parser and server
-- [] Add youtube to docker-compose
-- [] Update README with docker and youtube
-- [] Split requirements.txt to prod and dev
+- [ ] Add youtube to docker-compose
+- [ ] Update README with docker and youtube
+- [ ] Split requirements.txt to prod and dev
 - [x] Move to production Flask config
-- [] Refactor youtube.py
-- [] Write tests
-- [] Write the finel notebook
+- [ ] Refactor youtube.py
+- [ ] Write tests
+- [ ] Write the finel notebook
 
 ## Setup
 ### Create a virtual environment
