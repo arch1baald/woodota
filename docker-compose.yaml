@@ -6,7 +6,7 @@ services:
     hostname: dota_redis
 
   clarity:
-    image: arch1baald/clarity:latest
+    image: arch1baald/clarity:${OS_PLATFORM:-linux}
     container_name: dota_clarity
     ports:
       - "5600:5600"
@@ -14,7 +14,7 @@ services:
   api:
     build: .
     container_name: dota_api
-    # env_file: .env
+    env_file: .env
     environment:
       - REDIS_URL=redis://dota_redis
       - CLARITY_HOST=dota_clarity
@@ -30,8 +30,7 @@ services:
   worker:
     build: .
     container_name: dota_worker
-
-    # env_file: .env
+    env_file: .env
     environment:
       - REDIS_URL=redis://dota_redis
       - CLARITY_HOST=dota_clarity
