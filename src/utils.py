@@ -3,6 +3,7 @@ from typing import Any, List, Dict, Tuple
 
 import requests
 import pandas as pd
+import numpy as np
 from tenacity import retry, stop_after_attempt, wait_fixed
 from loguru import logger
 
@@ -56,6 +57,8 @@ class TimeSeries(pd.Series):
 class TimeTable(pd.DataFrame):
     def __init__(self, *args: Tuple, **kwargs: Dict):
         super().__init__(*args, **kwargs)
+        if 'time' not in self.columns:
+            self['time'] = np.nan
 
     def t(self, start_time: int = None, end_time: int = None) -> pd.DataFrame:
         if start_time is not None and end_time is not None:
@@ -75,7 +78,7 @@ def convert_binary_mask_to_intervals(binary_mask: TimeSeries) -> List[Dict]:
 
     intervals = [dict()]
     prev_flag = False
-    for time, flag in binary_mask.iteritems():
+    for time, flag in binary_mask.items():
         last_interval = intervals[-1]
         if flag is True and prev_flag is False:
             last_interval['start'] = time
