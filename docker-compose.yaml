@@ -14,7 +14,7 @@ services:
   api:
     build: .
     container_name: dota_api
-    env_file: .env
+    # env_file: .env
     environment:
       - REDIS_URL=redis://dota_redis
       - CLARITY_HOST=dota_clarity
@@ -31,7 +31,7 @@ services:
     build: .
     container_name: dota_worker
 
-    env_file: .env
+    # env_file: .env
     environment:
       - REDIS_URL=redis://dota_redis
       - CLARITY_HOST=dota_clarity
