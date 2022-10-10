@@ -1,11 +1,27 @@
 # dota-highlights
 Extract highlights from professional Dota 2 matches.
 
-## Quick Start
+## TODO
+- [ ] Important: Fix clarity-parser for Linux (MacOS M1 works well)
+- [ ] Write the final notebook
+- [ ] Refactor youtube.py
+- [ ] Add youtube to docker-compose or move to another repo
+- [ ] Write tests
 
+## Quick Start
+### Environment
+Create a `.env` file and select your os platform. There are two possible choices right now:
+- linux
+- macos
+```
+touch .env
+echo OS_PLATFORM=macos >> .env
+```
+
+### Docker
 Run Docker containers.
 ```
-docker-compose up
+docker-compose --env-file .env up
 ```
 
 ### Match ID
@@ -51,16 +67,6 @@ jupyter lab
 Open [`notebooks/piterpy.ipynb`](https://github.com/arch1baald/dota-highlights/blob/piterpy/notebooks/piterpy.ipynb) and follow the instructions.
 
 ## OLD non-structured docs
-## TODO
-- [x] Build and run with docker-compose parser and server
-- [ ] Documentation
-- [ ] Add youtube to docker-compose
-- [ ] Update README with docker and youtube
-- [ ] Split requirements.txt to prod and dev
-- [x] Move to production Flask config
-- [ ] Refactor youtube.py
-- [ ] Write tests
-- [ ] Write the finel notebook
 
 Parser repo: https://github.com/arch1baald/clarity-parser
 
