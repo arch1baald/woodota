@@ -1,12 +1,11 @@
 # WoDota
 Extract highlights from professional Dota 2 matches.
 
-A few minutes of nostalgia.
-<iframe width="1496" height="583" src="https://www.youtube.com/embed/P4L2mo8fH8I" title="DotA - WoDotA Top10 Weekly Vol.1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
+A few minutes of nostalgia. Click on image to view the video.<br>
+[![Click to play](https://img.youtube.com/vi/P4L2mo8fH8I/0.jpg)](https://www.youtube.com/watch?v=P4L2mo8fH8I)
 
 ## TODO
-- [ ] Important: Fix clarity-parser for Linux (MacOS M1 works well)
+- [ ] Update video preview picture (add play icon)
 - [ ] Write the final notebook
 - [ ] Refactor youtube.py
 - [ ] Add youtube to docker-compose or move to another repo
