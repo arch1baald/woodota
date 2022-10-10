@@ -1,4 +1,4 @@
-# WoDota
+# WooDota
 Extract highlights from professional Dota 2 matches.
 
 A few minutes of nostalgia. Click on image to view the video.<br>
