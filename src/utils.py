@@ -170,7 +170,7 @@ def flatten(list_of_lists: List) -> List:
     return [item for sublist in list_of_lists for item in sublist]
 
 
-def convert_to_dota_clock_format(seconds):
+def convert_to_dota_clock_format(seconds: int) -> str:
     minutes = str(seconds // 60).zfill(2)
     secs = str(seconds % 60).zfill(2)
     return f'{minutes}:{secs}'

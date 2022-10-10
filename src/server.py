@@ -3,6 +3,7 @@ from flask import Flask, Response, request, jsonify
 from loguru import logger
 
 from async_parser.tasks import download_parse_save
+from async_parser.celery import app as celery_app
 from dota import Match, NotParsedError
 
 
@@ -82,6 +83,13 @@ def parse() -> Response:
         url=dem_url,
         job_id=async_result.id
     ))
+
+
+@app.route('/job/<job_id>')
+def get_job(job_id: str) -> Response:
+    task = celery_app.AsyncResult(job_id)
+    details = task.get()
+    return jsonify(details)
 
 
 @app.route('/getHighlights/<match_id>')
