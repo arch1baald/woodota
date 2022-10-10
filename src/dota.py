@@ -6,9 +6,10 @@ from typing import List, Dict, Optional
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 
-from settings import MERGE_GAP
-from utils import TimeSeries, TimeTable, merge_close_intervals
+from settings import MERGE_GAP, REPLAY_DIR
+from utils import TimeSeries, TimeTable, merge_close_intervals, convert_to_dota_clock_format
 from attacks import find_attacks
 
 
@@ -168,6 +169,23 @@ class Match:
     def __repr__(self) -> str:
         return self.__str__()
 
+    @classmethod
+    def from_id(cls, match_id: int):
+        path = PosixPath(REPLAY_DIR)
+        filename = f'{match_id}.jsonlines'
+        path = path / filename
+
+        try:
+            match_id = int(match_id)
+        except ValueError:
+            raise NotParsedError(f"Can't extract match_id from file: {filename}")
+
+        if not path.exists():
+            raise NotParsedError(f"Can't find the file {path}. Did you forget to parse the match?")
+
+        match = cls(match_id, path)
+        return match
+
     @cached_property
     def events(self) -> List[Dict]:
         self.parse()
@@ -194,6 +212,9 @@ class Match:
         with open(self.jsonlines_path, 'r') as fin:
             for line in fin:
                 e = json.loads(line)
+                if 'time' not in e:
+                    raise NotParsedError(f"The event doesn't contain a time: {e}")
+
                 events.append(e)
 
                 if e['type'] == 'interval' and e.get('unit'):
@@ -249,6 +270,17 @@ class Match:
         df_moments = TimeTable(moments)
         df_moments['time'] = df_moments['start']
         return df_moments
+    
+    def get_action_moments(self) -> List[Dict]:
+        """Time intervals in Dota 2 time format where the player escaped attack on it or participated in a kill"""
+        moments = self.action_moments
+        moments = moments[['start', 'end']]
+        moments = moments.to_dict('records')
+
+        for moment in moments:
+            moment['clock_start'] = convert_to_dota_clock_format(moment['start'])
+            moment['clock_end'] = convert_to_dota_clock_format(moment['end'])
+        return moments
 
 
 class MatchPlayer:
@@ -286,8 +318,8 @@ class MatchPlayer:
                 if e['type'] == 'interval' and e.get('unit', 'unknown_unit') == self.unit:
                     time.append(e['time'])
                     health.append(e['hp'])
-            except Exception:
-                print(e)
+            except Exception as e:
+                logger.error(e)
                 break
         series = TimeSeries(index=time, data=health, name='hp')
         return series

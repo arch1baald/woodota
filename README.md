@@ -1,8 +1,57 @@
 # dota-highlights
 Extract highlights from professional Dota 2 matches.
 
-### TODO
+## Quick Start
+
+Run Docker containers.
+```
+docker-compose up
+```
+
+### Match ID
+Each match in Dota 2 has a Match ID. You can find it at the end of Dotabuff links or in the game client.<br>
+For example: 6216665747 with Dotabuff: https://dotabuff.com/matches/6216665747<br>
+Notice: Replays of non-professional matches are stored for 2 weeks.
+
+### Retrieve URL
+To retrieve an URL of the match replay
+```
+curl -X GET http://localhost:8000/retrieve/6676393091
+```
+Or just follow the link: http://localhost:8000/retrieve/6676393091.
+
+### Parse Replay
+```
+curl -X GET 'http://localhost:8000/parse?url=http://replay161.valve.net/570/6676393091_316408452.dem.bz2'
+```
+The process takes about a minute, depends on the internet connection and compute resources.
+
+### Extract Highlights
+To extract highlights from the match replay.
+```
+curl -X GET http://localhost:8000/getHighlights/6676393091
+```
+Or just follow the link: http://localhost:8000/getHighlights/6676393091.
+
+## YouTube
+### Install dependencies
+```
+python3 -m virtualenv env
+source env/bin/activate
+pip install -r requirements.txt
+```
+
+### Run Jupyter
+```
+jupyter lab
+```
+
+Open [`notebooks/piterpy.ipynb`](https://github.com/arch1baald/dota-highlights/blob/piterpy/notebooks/piterpy.ipynb) and follow the instructions.
+
+## OLD non-structured docs
+## TODO
 - [x] Build and run with docker-compose parser and server
+- [ ] Documentation
 - [ ] Add youtube to docker-compose
 - [ ] Update README with docker and youtube
 - [ ] Split requirements.txt to prod and dev
@@ -11,16 +60,11 @@ Extract highlights from professional Dota 2 matches.
 - [ ] Write tests
 - [ ] Write the finel notebook
 
-## Setup
-### Create a virtual environment
-```
-python3 -m virtualenv env
-source env/bin/activate
-```
+Parser repo: https://github.com/arch1baald/clarity-parser
 
-### Install dependencies
+Rebuild API
 ```
-pip install -r requirements.txt
+docker-compose up -d --build --no-deps api
 ```
 
 ### Build and Run Clarity Parser Server
@@ -60,14 +104,4 @@ curl -X GET -G 'http://localhost:8000/parse' -d url=$(head -n 1 replays/urls.txt
 Parse all matches from `urls.txt`<br>
 ```
 python scripts/parse_from_urls.py
-```
-
-# Docker TODO
-
-```
-docker compose up
-```
-
-```
-docker-compose up -d --build --no-deps api
 ```
