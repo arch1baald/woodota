@@ -9,8 +9,10 @@ docker-compose up
 ```
 
 ### Match ID
-Each match in Dota 2 has a Match ID. You can find it at the end of Dotabuff links or in the game client.<br>
-For example: 6216665747 with Dotabuff: https://dotabuff.com/matches/6216665747<br>
+Each match in Dota 2 has a Match ID. You can find it at the end of Dotabuff links or in the game client.
+
+For example: 6216665747 with Dotabuff: https://dotabuff.com/matches/6216665747.
+
 Notice: Replays of non-professional matches are stored for 2 weeks.
 
 ### Retrieve URL
