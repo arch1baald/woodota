@@ -1,5 +1,9 @@
-# dota-highlights
+# WoDota
 Extract highlights from professional Dota 2 matches.
+
+A few minutes of nostalgia.
+<iframe width="1496" height="583" src="https://www.youtube.com/embed/P4L2mo8fH8I" title="DotA - WoDotA Top10 Weekly Vol.1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 
 ## TODO
 - [ ] Important: Fix clarity-parser for Linux (MacOS M1 works well)
