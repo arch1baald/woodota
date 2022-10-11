@@ -1,8 +1,9 @@
+
 # WooDota
 Extract highlights from professional Dota 2 matches.
 
 A few minutes of nostalgia. Click on image to view the video.<br>
-[![Click to play](https://img.youtube.com/vi/P4L2mo8fH8I/0.jpg)](https://www.youtube.com/watch?v=P4L2mo8fH8I)
+[![Click to play](https://user-images.githubusercontent.com/14360119/195078930-8b85ac35-3781-4f24-b5e5-b4208c2d9217.jpg)](https://www.youtube.com/watch?v=P4L2mo8fH8I)
 
 ## TODO
 - [ ] Update video preview picture (add play icon)
