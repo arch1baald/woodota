@@ -7,6 +7,9 @@ import numpy as np
 from tenacity import retry, stop_after_attempt, wait_fixed
 from loguru import logger
 
+import dota
+from settings import HP_RATE_THRESHOLD, MAX_HP_THRESHOLD
+
 
 class DisableLogger:
     def __enter__(self):
@@ -174,3 +177,184 @@ def convert_to_dota_clock_format(seconds: int) -> str:
     minutes = str(seconds // 60).zfill(2)
     secs = str(seconds % 60).zfill(2)
     return f'{minutes}:{secs}'
+
+
+def plot_player_signals(
+    player: 'dota.MatchPlayer',
+    ax: Any = None,
+    zoom_start: int = None,
+    zoom_end: int = None,
+    use_minutes: bool = False,
+    hp: bool = False,
+    max_hp: bool = False,
+    dhp: bool = False,
+    sdhp: bool = False,
+    signal_hp_decreasing: bool = False,
+    signal_hp_low: bool = False,
+    deaths: bool = False,
+    as_target: bool = False,
+    as_target_escaped: bool = False,
+    as_attacker: bool = False,
+    as_attacker_kill: bool = False,
+):
+    denominator = 60 if use_minutes else 1
+    if hp:
+        ax.plot(
+            player.hp.t(zoom_start, zoom_end).index / denominator,
+            player.hp.t(zoom_start, zoom_end),
+            label='hp',
+        )
+
+    if max_hp:
+        ax.plot(
+            player.max_hp.t(zoom_start, zoom_end).index / denominator,
+            player.max_hp.t(zoom_start, zoom_end),
+            label='max_hp',
+        )
+
+    if dhp:
+        ax.plot(
+            player.dhp.t(zoom_start, zoom_end).index / denominator,
+            player.dhp.t(zoom_start, zoom_end),
+            label='dhp',
+        )
+
+    if sdhp:
+        ax.plot(
+            player.sdhp.t(zoom_start, zoom_end).index / denominator,
+            player.sdhp.t(zoom_start, zoom_end),
+            label='sdhp',
+        )
+
+    if signal_hp_decreasing:
+        binary_mask = player.sdhp.t(zoom_start, zoom_end) < HP_RATE_THRESHOLD
+        hp = player.hp.t(zoom_start, zoom_end)
+        hp = hp[binary_mask]
+        ax.scatter(
+            hp.index / denominator,
+            hp,
+            label='signal_hp_decreasing',
+            color='black',
+            alpha=.8,
+        )
+
+    if signal_hp_low:
+        hp_relative = player.hp.t(zoom_start, zoom_end) / player.max_hp.t(zoom_start, zoom_end)
+        binary_mask = hp_relative < MAX_HP_THRESHOLD
+        hp = player.hp.t(zoom_start, zoom_end)
+        hp = hp[binary_mask]
+        ax.scatter(
+            hp.index / denominator,
+            hp,
+            label='signal_hp_low',
+            color='red',
+            alpha=.8,
+        )
+
+    if deaths:
+        deaths_line_level = 0
+        ax.scatter(
+            player.deaths.t(zoom_start, zoom_end)['time'] / denominator,
+            np.full(player.deaths.t(zoom_start, zoom_end).shape[0], deaths_line_level),
+            label='death',
+            color='r',
+            marker='v',
+            s=100,
+        )
+
+    if as_target:
+        as_target_line_level = 0
+        x1 = player.as_target.t(zoom_start, zoom_end)['start'] / denominator
+        y1 = np.full(player.as_target.t(zoom_start, zoom_end)['start'].shape[0], as_target_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='as_target',
+            color='y',
+            marker='$[$',
+            s=100,
+        )
+        x2 = player.as_target.t(zoom_start, zoom_end)['end'] / denominator
+        y2 = np.full(player.as_target.t(zoom_start, zoom_end)['end'].shape[0], as_target_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='as_target',
+            color='y',
+            marker='$]$',
+            s=100,
+        )
+
+    if as_target_escaped:
+        as_target_escaped_line_level = 0
+        df_target = player.as_target.t(zoom_start, zoom_end)
+        df_target = df_target[~df_target['target_dead']]
+        x1 = df_target['start'] / denominator
+        y1 = np.full(df_target['start'].shape[0], as_target_escaped_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='as_target_escaped',
+            color='g',
+            marker='$[$',
+            s=100,
+        )
+        x2 = df_target['end'] / denominator
+        y2 = np.full(df_target['end'].shape[0], as_target_escaped_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='as_target_escaped',
+            color='g',
+            marker='$]$',
+            s=100,
+        )
+
+    if as_attacker:
+        as_attacker_line_level = 0
+        x1 = player.as_attacker.t(zoom_start, zoom_end)['start'] / denominator
+        y1 = np.full(player.as_attacker.t(zoom_start, zoom_end)['start'].shape[0], as_attacker_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='as_attacker',
+            color='b',
+            marker='$[$',
+            s=100,
+        )
+        x2 = player.as_attacker.t(zoom_start, zoom_end)['end'] / denominator
+        y2 = np.full(player.as_attacker.t(zoom_start, zoom_end)['end'].shape[0], as_attacker_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='as_attacker',
+            color='b',
+            marker='$]$',
+            s=100,
+        )
+
+    if as_attacker_kill:
+        as_attacker_kill_line_level = 0
+        df_attacker = player.as_attacker.t(zoom_start, zoom_end)
+        df_attacker = df_attacker[~df_attacker['target_dead']]
+        x1 = df_attacker['start'] / denominator
+        y1 = np.full(df_attacker['start'].shape[0], as_attacker_kill_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='as_attacker_kill',
+            color='r',
+            marker='$[$',
+            s=100,
+        )
+        x2 = df_attacker['end'] / denominator
+        y2 = np.full(df_attacker['end'].shape[0], as_attacker_kill_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='as_attacker_kill',
+            color='r',
+            marker='$]$',
+            s=100,
+        )
+    ax.legend()
