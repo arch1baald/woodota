@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from settings import MERGE_GAP, REPLAY_DIR
+from settings import MERGE_GAP, REPLAY_DIR, DHP_SMOOTH_WINDOW, MAX_HP_WINDOW
 from utils import TimeSeries, TimeTable, merge_close_intervals, convert_to_dota_clock_format
 from attacks import find_attacks
 
@@ -154,8 +154,6 @@ class Match:
 
 class MatchPlayer:
     """Dota 2 match participant"""
-    DHP_SMOOTH_WINDOW = 3
-    MAX_HP_WINDOW = 120
 
     def __init__(self, match: Match, slot: int, hero_name: str, steam_id: int = None):
         self.match = match
@@ -195,7 +193,7 @@ class MatchPlayer:
 
     @cached_property
     def max_hp(self) -> TimeSeries:
-        series = self.hp.rolling(MatchPlayer.MAX_HP_WINDOW).max()
+        series = self.hp.rolling(MAX_HP_WINDOW).max()
         series = series.fillna(method='bfill')
         return TimeSeries(series)
 
@@ -258,7 +256,7 @@ class MatchPlayer:
     @cached_property
     def sdhp(self) -> TimeSeries:
         """Smooth discrete difference of player hp"""
-        moving_average = self.dhp.rolling(MatchPlayer.DHP_SMOOTH_WINDOW).mean()
+        moving_average = self.dhp.rolling(DHP_SMOOTH_WINDOW).mean()
         moving_average = moving_average.fillna(method='bfill')
         series = TimeSeries(index=self.dhp.index, data=moving_average, name='sdhp')
         return series
@@ -268,6 +266,7 @@ class MatchPlayer:
         """Time intervals where the player was attacked but not necessarily killed"""
         intervals = find_attacks(self)
         df = TimeTable(intervals)
+        df['time'] = df['start']
         df['target'] = self
         return df
 
@@ -281,7 +280,9 @@ class MatchPlayer:
                 if self in attackers:
                     intervals.append(interval)
         intervals.sort(key=lambda dct: dct['start'])
-        return TimeTable(intervals)
+        df = TimeTable(intervals)
+        df['time'] = df['start']
+        return df
 
     @cached_property
     def action_moments(self) -> TimeTable:

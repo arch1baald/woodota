@@ -2,7 +2,7 @@ from typing import List, Dict
 
 import dota
 from utils import convert_binary_mask_to_intervals, merge_close_intervals, has_intersection
-from settings import HP_RATE_THRESHOLD, MAX_HP_THRESHOLD, MERGE_GAP
+from settings import HP_RATE_THRESHOLD, MAX_HP_THRESHOLD, MERGE_GAP, DHP_SMOOTH_WINDOW
 
 
 def find_hp_decreasing_intervals(player: 'dota.MatchPlayer') -> List[Dict]:
@@ -54,4 +54,6 @@ def find_attacks(player: 'dota.MatchPlayer') -> List[Dict]:
             hero_player = match.get_player(hero_name)
             converted_to_players.append(hero_player)
         interval['attacker_heroes'] = converted_to_players
+        interval['start'] -= DHP_SMOOTH_WINDOW
+        interval['end'] -= DHP_SMOOTH_WINDOW
     return intervals
