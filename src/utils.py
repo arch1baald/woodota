@@ -192,10 +192,19 @@ def plot_player_signals(
     signal_hp_decreasing: bool = False,
     signal_hp_low: bool = False,
     deaths: bool = False,
+    deaths_line_level: int = 0,
     as_target: bool = False,
+    as_target_line_level: int = 0,
     as_target_escaped: bool = False,
+    as_target_escaped_line_level: int = 0,
     as_attacker: bool = False,
+    as_attacker_line_level: int = 0,
     as_attacker_kill: bool = False,
+    as_attacker_kill_line_level: int = 0,
+    action_moments: bool = False,
+    action_moments_line_level: int = 0,
+    df_youtube: TimeTable = None,
+    youtube_line_level: int = 0,
 ):
     denominator = 60 if use_minutes else 1
     if hp:
@@ -252,7 +261,6 @@ def plot_player_signals(
         )
 
     if deaths:
-        deaths_line_level = 0
         ax.scatter(
             player.deaths.t(zoom_start, zoom_end)['time'] / denominator,
             np.full(player.deaths.t(zoom_start, zoom_end).shape[0], deaths_line_level),
@@ -263,7 +271,6 @@ def plot_player_signals(
         )
 
     if as_target:
-        as_target_line_level = 0
         x1 = player.as_target.t(zoom_start, zoom_end)['start'] / denominator
         y1 = np.full(player.as_target.t(zoom_start, zoom_end)['start'].shape[0], as_target_line_level)
         ax.scatter(
@@ -286,7 +293,6 @@ def plot_player_signals(
         )
 
     if as_target_escaped:
-        as_target_escaped_line_level = 0
         df_target = player.as_target.t(zoom_start, zoom_end)
         df_target = df_target[~df_target['target_dead']]
         x1 = df_target['start'] / denominator
@@ -311,7 +317,6 @@ def plot_player_signals(
         )
 
     if as_attacker:
-        as_attacker_line_level = 0
         x1 = player.as_attacker.t(zoom_start, zoom_end)['start'] / denominator
         y1 = np.full(player.as_attacker.t(zoom_start, zoom_end)['start'].shape[0], as_attacker_line_level)
         ax.scatter(
@@ -334,7 +339,6 @@ def plot_player_signals(
         )
 
     if as_attacker_kill:
-        as_attacker_kill_line_level = 0
         df_attacker = player.as_attacker.t(zoom_start, zoom_end)
         df_attacker = df_attacker[~df_attacker['target_dead']]
         x1 = df_attacker['start'] / denominator
@@ -354,6 +358,52 @@ def plot_player_signals(
             y2,
             label='as_attacker_kill',
             color='r',
+            marker='$]$',
+            s=100,
+        )
+
+    if action_moments:
+        df_moments= player.action_moments.t(zoom_start, zoom_end)
+        x1 = df_moments['start'] / denominator
+        y1 = np.full(df_moments['start'].shape[0], action_moments_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='action_moments',
+            color='black',
+            marker='$[$',
+            s=100,
+        )
+        x2 = df_moments['end'] / denominator
+        y2 = np.full(df_moments['end'].shape[0], action_moments_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='action_moments',
+            color='black',
+            marker='$]$',
+            s=100,
+        )
+
+    if df_youtube:
+        df_moments = df_youtube.t(zoom_start, zoom_end)
+        x1 = df_moments['start'] / denominator
+        y1 = np.full(df_moments['start'].shape[0], youtube_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='youtube',
+            color='purple',
+            marker='$[$',
+            s=100,
+        )
+        x2 = df_moments['end'] / denominator
+        y2 = np.full(df_moments['end'].shape[0], youtube_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='youtube',
+            color='purple',
             marker='$]$',
             s=100,
         )
