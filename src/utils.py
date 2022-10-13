@@ -205,6 +205,8 @@ def plot_player_signals(
     action_moments_line_level: int = 0,
     df_youtube: TimeTable = None,
     youtube_line_level: int = 0,
+    match_action_moments: bool = False,
+    match_action_moments_line_level: int = 0,
 ):
     denominator = 60 if use_minutes else 1
     if hp:
@@ -370,7 +372,7 @@ def plot_player_signals(
             x1,
             y1,
             label='action_moments',
-            color='black',
+            color='gray',
             marker='$[$',
             s=100,
         )
@@ -380,12 +382,35 @@ def plot_player_signals(
             x2,
             y2,
             label='action_moments',
+            color='gray',
+            marker='$]$',
+            s=100,
+        )
+    
+    if match_action_moments:
+        df_moments= player.match.action_moments.t(zoom_start, zoom_end)
+        x1 = df_moments['start'] / denominator
+        y1 = np.full(df_moments['start'].shape[0], match_action_moments_line_level)
+        ax.scatter(
+            x1,
+            y1,
+            label='match_action_moments',
+            color='black',
+            marker='$[$',
+            s=100,
+        )
+        x2 = df_moments['end'] / denominator
+        y2 = np.full(df_moments['end'].shape[0], match_action_moments_line_level)
+        ax.scatter(
+            x2,
+            y2,
+            label='match_action_moments',
             color='black',
             marker='$]$',
             s=100,
         )
 
-    if df_youtube:
+    if df_youtube is not None:
         df_moments = df_youtube.t(zoom_start, zoom_end)
         x1 = df_moments['start'] / denominator
         y1 = np.full(df_moments['start'].shape[0], youtube_line_level)
