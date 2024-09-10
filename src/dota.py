@@ -283,6 +283,8 @@ class MatchPlayer:
                     intervals.append(interval)
         intervals.sort(key=lambda dct: dct['start'])
         df = TimeTable(intervals)
+        if df.size == 0:
+            return df
         df['time'] = df['start']
         return df
 
@@ -293,7 +295,8 @@ class MatchPlayer:
         if not df_escapes.empty:
             df_escapes = df_escapes[(~df_escapes['target_dead']) & df_escapes['attacker_heroes']]
         df_attacks = self.as_attacker
-        df_attacks = df_attacks[df_attacks['target_dead']]
+        if not df_attacks.empty:
+            df_attacks = df_attacks[df_attacks['target_dead']]
         df_moments = pd.concat([df_escapes, df_attacks])
         if df_moments.empty:
             return TimeTable([])
@@ -434,3 +437,5 @@ class UnitToName(str, Enum):
     CDOTA_Unit_Hero_Wisp = 'npc_dota_hero_wisp'
     CDOTA_Unit_Hero_WitchDoctor = 'npc_dota_hero_witch_doctor'
     CDOTA_Unit_Hero_Zuus = 'npc_dota_hero_zuus'
+    CDOTA_Unit_Hero_Muerta = 'npc_dota_hero_muerta'
+
