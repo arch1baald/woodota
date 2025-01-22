@@ -5,13 +5,6 @@ Extract highlights from professional Dota 2 matches.
 A few minutes of nostalgia. Click on image to view the video.<br>
 [![Click to play](https://user-images.githubusercontent.com/14360119/195078930-8b85ac35-3781-4f24-b5e5-b4208c2d9217.jpg)](https://www.youtube.com/watch?v=P4L2mo8fH8I)
 
-## TODO
-- [ ] Update video preview picture (add play icon)
-- [ ] Write the final notebook
-- [ ] Refactor youtube.py
-- [ ] Add youtube to docker-compose or move to another repo
-- [ ] Write tests
-
 ## Quick Start
 ### Environment
 Create a `.env` file and select your os platform. There are two possible choices right now:
