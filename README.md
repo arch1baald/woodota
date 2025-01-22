@@ -70,7 +70,7 @@ jupyter lab
 
 Open [`notebooks/piterpy.ipynb`](https://github.com/arch1baald/dota-highlights/blob/piterpy/notebooks/piterpy.ipynb) and follow the instructions.
 
-## OLD non-structured docs
+## Useful Commands 
 
 Parser repo: https://github.com/arch1baald/clarity-parser
 
@@ -96,13 +96,13 @@ source env/bin/activate
 sh scripts/run_server.sh
 ```
 
-## Retrieve URLs
+### Retrieve URLs
 Retrieve replay URLs by Tournament ID (Could be found at the end of Dotabuff [links](https://www.dotabuff.com/esports/leagues/13256-the-international-2021)). The result will be saved to `replays/urls.txt`<br>
 ```
 python scripts/retrieve_match_urls.py --tournament 13256 --limit 15
 ```
 
-## Parse Matches
+### Parse Matches
 Parse match by URL<br>
 ```
 curl -X GET 'http://localhost:8000/parse?url=http://replay191.valve.net/570/6216665747_89886887.dem.bz2'
